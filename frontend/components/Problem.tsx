@@ -14,7 +14,7 @@ export function Problem() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">The old way is broken.</h2>
-          <p className="text-neutral-400 text-lg">Building a successful SaaS shouldn't rely on luck.</p>
+          <p className="text-neutral-400 text-lg">Building a successful SaaS should not rely on luck.</p>
         </div>
         
         <div className="grid md:grid-cols-3 gap-8">

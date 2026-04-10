@@ -8,7 +8,7 @@ export function LiveIdeaPreview() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">Sneak peek at our database</h2>
-          <p className="text-neutral-400 text-lg">Real ideas pulled from today's data.</p>
+          <p className="text-neutral-400 text-lg">Real ideas pulled from today data.</p>
         </div>
 
         <motion.div 
@@ -31,8 +31,8 @@ export function LiveIdeaPreview() {
             <div className="space-y-6">
               <div>
                 <h4 className="text-sm font-semibold text-neutral-500 uppercase tracking-widest mb-2">The Problem</h4>
-                <p className="text-lg text-white font-medium italic border-l-4 border-[#fb611e] pl-4 py-1">
-                  "I spend 4 hours a week manually reconciling Stripe invoices with my local tax agency format. None of the current tools handle regional EU taxes well for micro-startups."
+                <p className="text-lg text-white font-medium italic border-l-4 border-[#fb611e] pl-4 py-1"> 
+                  I spend 4 hours a week manually reconciling Stripe invoices with my local tax agency format. None of the current tools handle regional EU taxes well for micro-startups.
                 </p>
               </div>
 
