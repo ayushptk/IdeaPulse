@@ -1,0 +1,1 @@
+# TODO: Clean up unnecessary .md files for GitHub push\n\n- [ ] Step 1: Remove frontend/AGENTS.md and frontend/CLAUDE.md\n- [ ] Step 2: Update frontend/.gitignore to ignore non-essential .md files\n- [ ] Step 3: Git cleanup (rm --cached, add, commit)\n- [ ] Step 4: Verify and complete
