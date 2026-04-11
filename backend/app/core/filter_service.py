@@ -1,0 +1,103 @@
+"""
+Filter service — quality gate for raw platform data.
+
+Applies multiple heuristics to drop noise before AI processing:
+  - Minimum text length
+  - Minimum engagement threshold
+  - Language / relevance signals
+  - Duplicate detection within a batch
+"""
+
+import logging
+import re
+from typing import List, Set
+
+from app.config import get_settings
+from app.schemas import NormalizedPost
+
+logger = logging.getLogger(__name__)
+settings = get_settings()
+
+# ── Spam / noise patterns ──
+NOISE_PATTERNS = [
+    re.compile(r"(buy now|click here|discount|promo code)", re.IGNORECASE),
+    re.compile(r"(follow me|subscribe|giveaway|free money)", re.IGNORECASE),
+    re.compile(r"(https?://\S+){3,}", re.IGNORECASE),  # Excessive links
+    re.compile(r"[🎁🎉💰💵🤑]{2,}"),  # Spam emoji clusters
+]
+
+# ── Problem-indicator keywords that boost relevance ──
+PROBLEM_KEYWORDS = [
+    "frustrated", "wish there was", "need a tool", "pain point",
+    "looking for", "challenge", "problem", "struggle", "annoying",
+    "tedious", "manual process", "time-consuming", "expensive",
+    "broken", "hate", "difficult", "complicated", "alternative",
+    "better way", "someone should build", "why is there no",
+    "gap in", "missing", "underserved",
+]
+
+
+def _is_noise(text: str) -> bool:
+    """Check if text matches known spam/noise patterns."""
+    return any(pattern.search(text) for pattern in NOISE_PATTERNS)
+
+
+def _has_problem_signal(text: str) -> bool:
+    """Check if text contains keywords indicating a real problem."""
+    text_lower = text.lower()
+    return any(keyword in text_lower for keyword in PROBLEM_KEYWORDS)
+
+
+def _text_fingerprint(text: str) -> str:
+    """
+    Generate a rough fingerprint for deduplication.
+    Strips whitespace and lowercases for fuzzy matching.
+    """
+    cleaned = re.sub(r"\s+", " ", text.lower().strip())
+    # Use first 100 chars as fingerprint (good enough for near-duplicates)
+    return cleaned[:100]
+
+
+def filter_posts(posts: List[NormalizedPost]) -> List[NormalizedPost]:
+    """
+    Main filter pipeline — applies all quality gates in sequence.
+
+    Returns:
+        Filtered list of high-quality, relevant, deduplicated posts.
+    """
+    if not posts:
+        logger.warning("Filter: received empty post list")
+        return []
+
+    original_count = len(posts)
+    seen_fingerprints: Set[str] = set()
+    filtered: List[NormalizedPost] = []
+
+    for post in posts:
+        # Gate 1: Minimum text length
+        if len(post.text.strip()) < 30:
+            continue
+
+        # Gate 2: Noise detection
+        if _is_noise(post.text):
+            continue
+
+        # Gate 3: Engagement threshold
+        if post.engagement < settings.MIN_ENGAGEMENT_THRESHOLD:
+            # Exception: keep if it has strong problem signals
+            if not _has_problem_signal(post.text):
+                continue
+
+        # Gate 4: Deduplicate within batch
+        fingerprint = _text_fingerprint(post.text)
+        if fingerprint in seen_fingerprints:
+            continue
+        seen_fingerprints.add(fingerprint)
+
+        filtered.append(post)
+
+    logger.info(
+        f"Filter: {original_count} → {len(filtered)} posts "
+        f"({original_count - len(filtered)} removed)"
+    )
+    return filtered
