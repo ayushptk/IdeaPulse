@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
+import { Mission } from "@/components/Mission";
 import { Problem } from "@/components/Problem";
 import { Solution } from "@/components/Solution";
 import { Features } from "@/components/Features";
@@ -13,6 +14,7 @@ export default function Home() {
     <main className="min-h-screen bg-black text-white overflow-x-hidden">
       <Navbar />
       <Hero />
+      <Mission />
       <Problem />
       <Solution />
       <Features />
