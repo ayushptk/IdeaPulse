@@ -130,12 +130,17 @@ async def generate_ideas(
                 config=types.GenerateContentConfig(
                     temperature=0.7,
                     max_output_tokens=settings.GEMINI_MAX_TOKENS,
+                    response_mime_type="application/json",
                 ),
             ),
         )
 
         raw_content = response.text.strip()
         ideas = _parse_ai_response(raw_content)
+
+        if not ideas:
+            logger.warning(f"AI: parsed zero ideas for {platform}, using fallback")
+            return _generate_fallback_ideas(clusters, platform)
 
         logger.info(f"AI: generated {len(ideas)} ideas for {platform}")
         return ideas
