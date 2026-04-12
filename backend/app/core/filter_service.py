@@ -26,14 +26,52 @@ NOISE_PATTERNS = [
     re.compile(r"[🎁🎉💰💵🤑]{2,}"),  # Spam emoji clusters
 ]
 
-# ── Problem-indicator keywords that boost relevance ──
+# ── Problem-indicator keywords — used to bypass engagement threshold ──
+# These mirror the first-pass filter in reddit_service.py so that posts
+# with strong problem signals are never dropped due to low engagement.
 PROBLEM_KEYWORDS = [
-    "frustrated", "wish there was", "need a tool", "pain point",
-    "looking for", "challenge", "problem", "struggle", "annoying",
-    "tedious", "manual process", "time-consuming", "expensive",
-    "broken", "hate", "difficult", "complicated", "alternative",
-    "better way", "someone should build", "why is there no",
-    "gap in", "missing", "underserved",
+    # User-specified high-signal phrases (first quick filter)
+    "i wish",
+    "i hate",
+    "so frustrated",
+    "anyone else hate",
+    "there should be an app",
+    "why is there no",
+    "anyone know a tool",
+    "this sucks",
+    "pain point",
+    "biggest problem",
+    "i'm struggling with",
+    "im struggling with",
+    "need something that",
+    "would pay for",
+    # Additional NLP boosters
+    "wish there was",
+    "need a tool",
+    "looking for a tool",
+    "can't find a good",
+    "manual process",
+    "time-consuming",
+    "someone should build",
+    "gap in the market",
+    "underserved",
+    "no good solution",
+    "is there an app",
+    "is there a tool",
+    "drives me crazy",
+    "pulling my hair out",
+    "spent hours manually",
+    "wasted hours",
+    "annoying",
+    "tedious",
+    "broken",
+    "complicated",
+    "better way",
+    "alternative",
+    "struggle",
+    "challenge",
+    "expensive",
+    "difficult",
 ]
 
 

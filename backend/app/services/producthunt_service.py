@@ -2,6 +2,7 @@
 Product Hunt data collection service.
 
 Fetches recent launched products and discussions via Product Hunt's GraphQL API.
+Uses OAuth2 client_credentials flow to exchange API Key + Secret for a bearer token.
 Focuses on extracting pain points from product descriptions and comments.
 """
 
@@ -17,10 +18,11 @@ from app.schemas import NormalizedPost
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# Product Hunt GraphQL endpoint
+# Product Hunt endpoints
+PH_TOKEN_URL = "https://api.producthunt.com/v2/oauth/token"
 PH_API_URL = "https://api.producthunt.com/v2/api/graphql"
 
-# GraphQL query for recent posts with discussions
+# GraphQL query — latest posts with vote/comment counts
 POSTS_QUERY = """
 query($first: Int!, $order: PostsOrder!) {
   posts(first: $first, order: $order) {
@@ -45,62 +47,145 @@ query($first: Int!, $order: PostsOrder!) {
 }
 """
 
+# GraphQL query — fetch comments for a specific post (for richer pain-point data)
+COMMENTS_QUERY = """
+query($postId: ID!, $first: Int!) {
+  post(id: $postId) {
+    comments(first: $first, order: NEWEST) {
+      edges {
+        node {
+          id
+          body
+          votesCount
+          createdAt
+        }
+      }
+    }
+  }
+}
+"""
 
-async def _fetch_with_api(client: httpx.AsyncClient, limit: int = 50) -> List[dict]:
-    """Fetch posts from Product Hunt's official GraphQL API."""
-    if not settings.PRODUCTHUNT_API_TOKEN:
-        logger.warning("Product Hunt: no API token configured, using scrape fallback")
-        return []
+# In-memory token cache (per process lifetime)
+_cached_token: str | None = None
 
+
+async def _get_access_token(client: httpx.AsyncClient) -> str | None:
+    """
+    Exchange API Key + Secret for a bearer token via OAuth2 client_credentials.
+    Caches the token for the lifetime of the process.
+    """
+    global _cached_token
+    if _cached_token:
+        return _cached_token
+
+    # Prefer a pre-configured static token if provided
+    if settings.PRODUCTHUNT_API_TOKEN:
+        _cached_token = settings.PRODUCTHUNT_API_TOKEN
+        return _cached_token
+
+    if not settings.PRODUCTHUNT_API_KEY or not settings.PRODUCTHUNT_API_SECRET:
+        logger.warning("Product Hunt: no API credentials configured")
+        return None
+
+    payload = {
+        "client_id": settings.PRODUCTHUNT_API_KEY,
+        "client_secret": settings.PRODUCTHUNT_API_SECRET,
+        "grant_type": "client_credentials",
+    }
+
+    try:
+        resp = await client.post(
+            PH_TOKEN_URL,
+            json=payload,
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            timeout=15.0,
+        )
+        resp.raise_for_status()
+        token_data = resp.json()
+        _cached_token = token_data.get("access_token")
+        if _cached_token:
+            logger.info("Product Hunt: successfully obtained bearer token")
+        else:
+            logger.error(f"Product Hunt: token response missing access_token: {token_data}")
+        return _cached_token
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Product Hunt: OAuth token request failed {e.response.status_code}: {e.response.text}")
+        return None
+    except Exception as e:
+        logger.error(f"Product Hunt: OAuth token request error: {e}")
+        return None
+
+
+async def _graphql(
+    client: httpx.AsyncClient,
+    token: str,
+    query: str,
+    variables: dict,
+) -> dict:
+    """Execute a GraphQL query against the Product Hunt API."""
     headers = {
-        "Authorization": f"Bearer {settings.PRODUCTHUNT_API_TOKEN}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
-    payload = {
-        "query": POSTS_QUERY,
-        "variables": {"first": limit, "order": "NEWEST"},
-    }
+    resp = await client.post(
+        PH_API_URL,
+        json={"query": query, "variables": variables},
+        headers=headers,
+        timeout=30.0,
+    )
+    resp.raise_for_status()
+    return resp.json()
 
-    response = await client.post(PH_API_URL, json=payload, headers=headers)
-    response.raise_for_status()
-    data = response.json()
+
+async def _fetch_posts(client: httpx.AsyncClient, token: str, limit: int) -> List[dict]:
+    """Fetch the latest Product Hunt posts."""
+    data = await _graphql(
+        client, token, POSTS_QUERY,
+        {"first": min(limit, 50), "order": "RANKING"},
+    )
     edges = data.get("data", {}).get("posts", {}).get("edges", [])
-    return [edge["node"] for edge in edges]
+    return [edge["node"] for edge in edges if edge.get("node")]
 
 
-async def _fetch_homepage_fallback(client: httpx.AsyncClient) -> List[dict]:
-    """
-    Fallback: scrape Product Hunt's public API-like endpoints.
-    Returns a simplified structure when no API token is available.
-    """
+async def _fetch_comments(client: httpx.AsyncClient, token: str, post_id: str) -> List[str]:
+    """Fetch top comments for a post to enrich the pain-point text."""
     try:
-        response = await client.get(
-            "https://www.producthunt.com/frontend/graphql",
-            params={"operation": "HomefeedQuery"},
-            headers={"Accept": "application/json"},
+        data = await _graphql(
+            client, token, COMMENTS_QUERY,
+            {"postId": post_id, "first": 5},
         )
-        if response.status_code == 200:
-            return response.json().get("data", {}).get("homefeed", {}).get("edges", [])
+        edges = data.get("data", {}).get("post", {}).get("comments", {}).get("edges", [])
+        return [
+            edge["node"]["body"].strip()
+            for edge in edges
+            if edge.get("node", {}).get("body", "").strip()
+        ]
     except Exception as e:
-        logger.warning(f"Product Hunt fallback scrape failed: {e}")
-    return []
+        logger.debug(f"Product Hunt: failed to fetch comments for {post_id}: {e}")
+        return []
 
 
-def _parse_product(product: dict) -> NormalizedPost | None:
-    """Convert a Product Hunt node into a NormalizedPost."""
+def _parse_product(product: dict, comments: List[str] | None = None) -> NormalizedPost | None:
+    """Convert a Product Hunt node (+ optional comments) into a NormalizedPost."""
     name = product.get("name", "").strip()
     tagline = product.get("tagline", "").strip()
     description = product.get("description", "").strip()
 
-    text = f"{name}: {tagline}\n{description}" if description else f"{name}: {tagline}"
+    parts = [f"{name}: {tagline}"]
+    if description:
+        parts.append(description)
+    if comments:
+        parts.append("User feedback: " + " | ".join(comments[:3]))
+
+    text = "\n".join(parts)
 
     if len(text) < 20:
         return None
 
-    votes = product.get("votesCount", 0)
-    comments = product.get("commentsCount", 0)
-    engagement = votes + comments
+    votes = product.get("votesCount", 0) or 0
+    comments_count = product.get("commentsCount", 0) or 0
+    engagement = votes + comments_count
 
     created = product.get("createdAt", "")
     try:
@@ -118,25 +203,38 @@ def _parse_product(product: dict) -> NormalizedPost | None:
 
 
 async def fetch_producthunt_posts() -> List[NormalizedPost]:
-    """Main entry point — collects recent Product Hunt launches."""
+    """Main entry point — collects recent Product Hunt launches with comments."""
     posts: List[NormalizedPost] = []
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
-            raw_products = await _fetch_with_api(client, limit=settings.MAX_POSTS_PER_FETCH)
+            token = await _get_access_token(client)
+            if not token:
+                logger.error("Product Hunt: cannot fetch without a valid token")
+                return []
 
-            if not raw_products:
-                raw_products = await _fetch_homepage_fallback(client)
+            raw_products = await _fetch_posts(client, token, limit=settings.MAX_POSTS_PER_FETCH)
+            logger.info(f"Product Hunt: fetched {len(raw_products)} raw products")
 
             for product in raw_products:
-                parsed = _parse_product(product)
+                post_id = product.get("id", "")
+                comments: List[str] = []
+
+                # Only fetch comments if the post has some (saves API quota)
+                if post_id and (product.get("commentsCount") or 0) > 0:
+                    comments = await _fetch_comments(client, token, post_id)
+
+                parsed = _parse_product(product, comments)
                 if parsed:
                     posts.append(parsed)
 
             logger.info(f"Product Hunt: collected {len(posts)} normalized posts")
+
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Product Hunt API HTTP error {e.response.status_code}: {e.response.text[:300]}")
         except httpx.HTTPError as e:
             logger.error(f"Product Hunt API error: {e}")
         except Exception as e:
-            logger.error(f"Product Hunt unexpected error: {e}")
+            logger.error(f"Product Hunt unexpected error: {e}", exc_info=True)
 
     return posts[:settings.MAX_POSTS_PER_FETCH]

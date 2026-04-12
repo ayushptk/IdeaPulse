@@ -18,10 +18,10 @@ class Settings(BaseSettings):
     # ── Database ──
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ideaforge"
 
-    # ── OpenAI ──
-    OPENAI_API_KEY: str = ""
-    OPENAI_MODEL: str = "gpt-4o-mini"
-    OPENAI_MAX_TOKENS: int = 4096
+    # ── Google Gemini ──
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MAX_TOKENS: int = 4096
 
     # ── Reddit API ──
     REDDIT_CLIENT_ID: str = ""
@@ -32,7 +32,9 @@ class Settings(BaseSettings):
     TWITTER_BEARER_TOKEN: str = ""
 
     # ── Product Hunt API ──
-    PRODUCTHUNT_API_TOKEN: str = ""
+    PRODUCTHUNT_API_KEY: str = ""
+    PRODUCTHUNT_API_SECRET: str = ""
+    PRODUCTHUNT_API_TOKEN: str = ""  # optional: pre-fetched bearer token
 
     # ── LinkedIn (via Proxycurl or similar) ──
     LINKEDIN_API_KEY: str = ""
@@ -40,7 +42,7 @@ class Settings(BaseSettings):
     # ── Pipeline Settings ──
     MAX_POSTS_PER_FETCH: int = 100
     TOP_IDEAS_COUNT: int = 5
-    MIN_ENGAGEMENT_THRESHOLD: int = 10
+    MIN_ENGAGEMENT_THRESHOLD: int = 1
     DUPLICATE_SIMILARITY_THRESHOLD: float = 0.85
 
     # ── Scheduling ──

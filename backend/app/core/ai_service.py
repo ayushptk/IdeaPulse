@@ -1,5 +1,5 @@
 """
-AI service — SaaS idea generation using OpenAI.
+AI service — SaaS idea generation using Google Gemini.
 
 Takes clustered problem themes and generates structured SaaS ideas.
 Uses batch processing to minimize API calls and token usage.
@@ -7,9 +7,11 @@ Uses batch processing to minimize API calls and token usage.
 
 import json
 import logging
+import asyncio
 from typing import List
 
-from openai import AsyncOpenAI
+from google import genai
+from google.genai import types
 
 from app.config import get_settings
 from app.schemas import ClusterResult, GeneratedIdea
@@ -18,14 +20,14 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 # Lazy-initialized client (avoids import-time errors if key is missing)
-_client: AsyncOpenAI | None = None
+_client: genai.Client | None = None
 
 
-def _get_client() -> AsyncOpenAI:
-    """Get or create the OpenAI async client."""
+def _get_client() -> genai.Client:
+    """Get or create the Gemini client."""
     global _client
     if _client is None:
-        _client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        _client = genai.Client(api_key=settings.GEMINI_API_KEY)
     return _client
 
 
@@ -92,7 +94,7 @@ async def generate_ideas(
     platform: str,
 ) -> List[GeneratedIdea]:
     """
-    Generate SaaS ideas from clustered posts using OpenAI.
+    Generate SaaS ideas from clustered posts using Google Gemini.
 
     Args:
         clusters: Grouped problem themes from a single platform.
@@ -110,33 +112,36 @@ async def generate_ideas(
         logger.warning(f"AI: no clusters provided for {platform}")
         return []
 
-    if not settings.OPENAI_API_KEY:
-        logger.error("AI: OPENAI_API_KEY not configured")
+    if not settings.GEMINI_API_KEY:
+        logger.error("AI: GEMINI_API_KEY not configured")
         return _generate_fallback_ideas(clusters, platform)
 
     client = _get_client()
-    user_prompt = _build_user_prompt(clusters, platform)
+    full_prompt = f"{SYSTEM_PROMPT}\n\n{_build_user_prompt(clusters, platform)}"
 
     try:
-        response = await client.chat.completions.create(
-            model=settings.OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-            max_tokens=settings.OPENAI_MAX_TOKENS,
-            temperature=0.7,
-            response_format={"type": "json_object"},  # Force JSON output
+        # google-genai SDK is sync — run in executor to keep async-friendly
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: client.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=full_prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.7,
+                    max_output_tokens=settings.GEMINI_MAX_TOKENS,
+                ),
+            ),
         )
 
-        raw_content = response.choices[0].message.content.strip()
+        raw_content = response.text.strip()
         ideas = _parse_ai_response(raw_content)
 
         logger.info(f"AI: generated {len(ideas)} ideas for {platform}")
         return ideas
 
     except Exception as e:
-        logger.error(f"AI: OpenAI API error for {platform}: {e}")
+        logger.error(f"AI: Gemini API error for {platform}: {e}")
         return _generate_fallback_ideas(clusters, platform)
 
 
@@ -144,7 +149,15 @@ def _parse_ai_response(raw_content: str) -> List[GeneratedIdea]:
     """
     Parse and validate the AI response JSON.
     Handles both array responses and object-with-array responses.
+    Strips markdown code fences if Gemini wraps output in them.
     """
+    # Strip markdown code fences (```json ... ``` or ``` ... ```)
+    if raw_content.startswith("```"):
+        lines = raw_content.splitlines()
+        raw_content = "\n".join(
+            line for line in lines if not line.strip().startswith("```")
+        ).strip()
+
     try:
         parsed = json.loads(raw_content)
 
@@ -184,7 +197,7 @@ def _generate_fallback_ideas(
     clusters: List[ClusterResult], platform: str
 ) -> List[GeneratedIdea]:
     """
-    Fallback idea generation when OpenAI is unavailable.
+    Fallback idea generation when Gemini is unavailable.
     Generates basic ideas from cluster data using heuristics.
     """
     logger.info(f"AI: using fallback generation for {platform}")
