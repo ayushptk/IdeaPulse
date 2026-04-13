@@ -2,9 +2,8 @@
 import { motion } from "framer-motion";
 import { 
   Signal, Wifi, Battery, ChevronLeft, Share, MoreHorizontal, 
-  SlidersHorizontal, LayoutGrid, Link2, Table, Check 
+  SlidersHorizontal, LayoutGrid, Link2, Table, Check, MessageSquare
 } from "lucide-react";
-import { FaRedditAlien } from "react-icons/fa";
 
 interface FloatingCardProps {
   icon: React.ElementType;
@@ -113,7 +112,7 @@ export function Features() {
                   {/* Item 1 */}
                   <div className="flex-1 bg-neutral-900 rounded-2xl p-3 flex flex-col justify-center items-center">
                     <div className="w-14 h-14 bg-gradient-to-tr from-blue-900/40 to-neutral-800 rounded-lg mb-2 shadow-sm flex items-center justify-center rotate-[-10deg]">
-                      <FaRedditAlien className="text-blue-500 w-6 h-6" />
+                      <MessageSquare className="text-blue-500 w-6 h-6" />
                     </div>
                     <span className="text-[11px] font-medium text-neutral-300">Reddit</span>
                   </div>
@@ -141,7 +140,7 @@ export function Features() {
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/5"></div>
                     {/* Wavy shape */}
                     <div className="absolute -left-4 top-0 w-24 h-24 bg-white/20 rounded-full blur-[2px] -translate-y-10"></div>
-                    <span className="text-[10px] font-bold text-neutral-900 relative z-10 z-10 uppercase tracking-wider">Demand</span>
+                    <span className="text-[10px] font-bold text-neutral-900 relative z-10 uppercase tracking-wider">Demand</span>
                   </div>
 
                   {/* Doc Color */}

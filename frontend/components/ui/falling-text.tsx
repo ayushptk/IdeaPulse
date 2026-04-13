@@ -30,22 +30,19 @@ export const FallingText: React.FC<FallingTextProps> = ({
   const [effectStarted, setEffectStarted] = useState(trigger === 'auto');
 
   useEffect(() => {
-    if (trigger === 'auto') {
-      return;
-    }
-    if (trigger === 'scroll' && containerRef.current) {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setEffectStarted(true);
-            observer.disconnect();
-          }
-        },
-        { threshold: 0.1 }
-      );
-      observer.observe(containerRef.current);
-      return () => observer.disconnect();
-    }
+    if (trigger !== 'scroll' || !containerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setEffectStarted(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, [trigger]);
 
   useEffect(() => {
@@ -86,7 +83,7 @@ export const FallingText: React.FC<FallingTextProps> = ({
 
     if (!textRef.current) return;
     const wordSpans = textRef.current.querySelectorAll('.word');
-    const wordBodies = [...wordSpans].map(elem => {
+    const wordBodies = Array.from(wordSpans).map(elem => {
       const rect = elem.getBoundingClientRect();
 
       const x = rect.left - containerRect.left + rect.width / 2;
@@ -104,7 +101,7 @@ export const FallingText: React.FC<FallingTextProps> = ({
       });
       Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.05);
 
-      return { elem, body };
+      return { elem: elem as HTMLElement, body };
     });
 
     wordBodies.forEach(({ elem, body }) => {
@@ -130,6 +127,7 @@ export const FallingText: React.FC<FallingTextProps> = ({
     Runner.run(runner, engine);
     Render.run(render);
 
+    let animationFrameId: number;
     const updateLoop = () => {
       wordBodies.forEach(({ body, elem }) => {
         const { x, y } = body.position;
@@ -138,14 +136,15 @@ export const FallingText: React.FC<FallingTextProps> = ({
         elem.style.transform = `translate(-50%, -50%) rotate(${body.angle}rad)`;
       });
       Matter.Engine.update(engine);
-      requestAnimationFrame(updateLoop);
+      animationFrameId = requestAnimationFrame(updateLoop);
     };
-    updateLoop();
+    animationFrameId = requestAnimationFrame(updateLoop);
 
     const container = canvasContainerRef.current;
     const currentCanvas = render.canvas;
 
     return () => {
+      cancelAnimationFrame(animationFrameId);
       Render.stop(render);
       Runner.stop(runner);
       if (currentCanvas && container) {

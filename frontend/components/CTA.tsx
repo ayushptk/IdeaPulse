@@ -1,7 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
 
-
 export function CTA() {
   return (
     <section className="py-24 relative overflow-hidden">
