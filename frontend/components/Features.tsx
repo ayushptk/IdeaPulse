@@ -2,11 +2,19 @@
 import { motion } from "framer-motion";
 import { 
   Signal, Wifi, Battery, ChevronLeft, Share, MoreHorizontal, 
-  PenTool, SlidersHorizontal, LayoutGrid, Link2, Table, Check 
+  SlidersHorizontal, LayoutGrid, Link2, Table, Check 
 } from "lucide-react";
 import { FaRedditAlien } from "react-icons/fa";
 
-const FloatingCard = ({ icon: Icon, title, description, className, delay = 0 }: any) => (
+interface FloatingCardProps {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  className?: string;
+  delay?: number;
+}
+
+const FloatingCard = ({ icon: Icon, title, description, className, delay = 0 }: FloatingCardProps) => (
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}

@@ -27,11 +27,10 @@ export const FallingText: React.FC<FallingTextProps> = ({
   const textRef = useRef<HTMLDivElement | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const [effectStarted, setEffectStarted] = useState(false);
+  const [effectStarted, setEffectStarted] = useState(trigger === 'auto');
 
   useEffect(() => {
     if (trigger === 'auto') {
-      setEffectStarted(true);
       return;
     }
     if (trigger === 'scroll' && containerRef.current) {
@@ -143,11 +142,14 @@ export const FallingText: React.FC<FallingTextProps> = ({
     };
     updateLoop();
 
+    const container = canvasContainerRef.current;
+    const currentCanvas = render.canvas;
+
     return () => {
       Render.stop(render);
       Runner.stop(runner);
-      if (render.canvas && canvasContainerRef.current) {
-        canvasContainerRef.current.removeChild(render.canvas);
+      if (currentCanvas && container) {
+        container.removeChild(currentCanvas);
       }
       World.clear(engine.world, false);
       Engine.clear(engine);
