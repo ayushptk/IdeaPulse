@@ -14,7 +14,7 @@ from google import genai
 from google.genai import types
 
 from app.config import get_settings
-from app.schemas import ClusterResult, GeneratedIdea
+from app.schemas import ClusterResult, GeneratedIdea, LinkedInFounderIdea
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -58,6 +58,28 @@ OUTPUT FORMAT: Return a JSON array of objects with exactly these fields:
 }"""
 
 
+LINKEDIN_SYSTEM_PROMPT = """You are an expert SaaS founder, YC startup advisor, and product-market fit specialist.
+
+Your task is to convert real-world problems into high-potential SaaS startup ideas.
+
+Analyze the post deeply like a founder looking for billion-dollar opportunities.
+
+THINK STEP-BY-STEP:
+- What frustration is hidden behind the text?
+- Is this a repeated problem?
+- Is there an inefficient manual process?
+- Can this be automated or simplified?
+
+Avoid:
+- Generic ideas
+- Already saturated markets
+- Obvious solutions
+
+Be sharp, practical, and founder-level thinking.
+
+Return ONLY valid JSON."""
+
+
 def _build_user_prompt(clusters: List[ClusterResult], platform: str) -> str:
     """
     Build the user prompt from clusters.
@@ -83,6 +105,37 @@ def _build_user_prompt(clusters: List[ClusterResult], platform: str) -> str:
 
 Generate 5 unique SaaS ideas based on the problems identified above.
 Return ONLY a valid JSON array — no markdown, no explanation, just the JSON."""
+
+
+def _build_linkedin_user_prompt(clusters: List[ClusterResult]) -> str:
+    """
+    Build a LinkedIn-specific founder prompt from representative posts.
+    Generates exactly 3 ideas with richer strategy-focused fields.
+    """
+    post_samples = []
+    for i, cluster in enumerate(clusters[:6]):
+        post_samples.append(
+            f"POST {i + 1}:\n\"\"\"\n{cluster.representative_text[:1000]}\n\"\"\""
+        )
+    posts_blob = "\n\n".join(post_samples)
+
+    return f"""Analyze the following LinkedIn posts:
+
+{posts_blob}
+
+GENERATE ONLY TOP 3 IDEAS.
+
+Each idea must include exactly these fields:
+{{
+  "problem": "Deep pain point behind the post",
+  "users": "Very specific target customer",
+  "idea": "Idea Name: <name> | Solution: <clear SaaS solution> | Why this will work: <real-world reasoning> | Competitor gap: <why existing tools fail>",
+  "features": ["3-5 core features"],
+  "monetization": "Specific monetization model",
+  "score": 8.2
+}}
+
+Return ONLY a valid JSON array with exactly 3 objects."""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -117,7 +170,12 @@ async def generate_ideas(
         return _generate_fallback_ideas(clusters, platform)
 
     client = _get_client()
-    full_prompt = f"{SYSTEM_PROMPT}\n\n{_build_user_prompt(clusters, platform)}"
+    if platform == "linkedin":
+        full_prompt = (
+            f"{LINKEDIN_SYSTEM_PROMPT}\n\n{_build_linkedin_user_prompt(clusters)}"
+        )
+    else:
+        full_prompt = f"{SYSTEM_PROMPT}\n\n{_build_user_prompt(clusters, platform)}"
 
     try:
         # google-genai SDK is sync — run in executor to keep async-friendly
@@ -208,12 +266,20 @@ def _generate_fallback_ideas(
     logger.info(f"AI: using fallback generation for {platform}")
     ideas = []
 
-    for i, cluster in enumerate(clusters[:5]):
+    max_ideas = 3 if platform == "linkedin" else 5
+
+    for i, cluster in enumerate(clusters[:max_ideas]):
         text = cluster.representative_text[:200]
         ideas.append(GeneratedIdea(
             problem=f"Users on {platform} report: {text}",
             users=f"Professionals encountering this issue on {platform}",
-            idea=f"AI-powered solution for the problem described in cluster {i + 1}",
+            idea=(
+                f"Idea Name: {platform.title()} Ops Optimizer {i + 1} | "
+                f"Solution: AI-powered solution for the problem in cluster {i + 1} | "
+                f"Why this will work: teams already pay for productivity and automation | "
+                f"Competitor gap: existing tools are fragmented and not workflow-native"
+            ) if platform == "linkedin"
+            else f"AI-powered solution for the problem described in cluster {i + 1}",
             features=[
                 "Problem detection dashboard",
                 "Automated workflow engine",
@@ -224,3 +290,88 @@ def _generate_fallback_ideas(
         ))
 
     return ideas
+
+
+async def extract_linkedin_founder_ideas(post_text: str) -> List[LinkedInFounderIdea]:
+    """
+    Extract top 3 founder-style SaaS ideas from a single LinkedIn post text.
+    Uses the user's requested strategy-focused prompt format.
+    """
+    if len(post_text.strip()) < 20:
+        return []
+
+    if not settings.GEMINI_API_KEY:
+        logger.error("AI: GEMINI_API_KEY not configured for LinkedIn extraction")
+        return []
+
+    client = _get_client()
+    user_prompt = f"""POST:
+\"\"\"
+{post_text[:4000]}
+\"\"\"
+
+GENERATE ONLY TOP 3 IDEAS.
+
+Each idea must include:
+1. Idea Name
+2. Problem (deep pain point)
+3. Target Customer (very specific)
+4. Solution (clear SaaS product)
+5. Core Features (3–5)
+6. Why this will work (real-world reasoning)
+7. Monetization Model
+8. Competitor Gap (why existing tools fail)
+
+Return ONLY a valid JSON array with exactly these keys per object:
+{{
+  "idea_name": "string",
+  "problem": "string",
+  "target_customer": "string",
+  "solution": "string",
+  "core_features": ["string", "string", "string"],
+  "why_this_will_work": "string",
+  "monetization_model": "string",
+  "competitor_gap": "string",
+  "score": 8.4
+}}"""
+
+    full_prompt = f"{LINKEDIN_SYSTEM_PROMPT}\n\n{user_prompt}"
+
+    try:
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: client.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=full_prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.7,
+                    max_output_tokens=settings.GEMINI_MAX_TOKENS,
+                    response_mime_type="application/json",
+                ),
+            ),
+        )
+
+        raw_content = response.text.strip()
+        if raw_content.startswith("```"):
+            lines = raw_content.splitlines()
+            raw_content = "\n".join(
+                line for line in lines if not line.strip().startswith("```")
+            ).strip()
+
+        parsed = json.loads(raw_content)
+        if isinstance(parsed, dict):
+            parsed = [parsed]
+        if not isinstance(parsed, list):
+            return []
+
+        ideas: List[LinkedInFounderIdea] = []
+        for item in parsed[:3]:
+            try:
+                ideas.append(LinkedInFounderIdea(**item))
+            except Exception as e:
+                logger.warning(f"AI: skipping invalid LinkedIn founder idea: {e}")
+        return ideas
+    except Exception as e:
+        logger.error(f"AI: LinkedIn founder extraction failed: {e}")
+        return []

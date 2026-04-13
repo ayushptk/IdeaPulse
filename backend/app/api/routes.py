@@ -6,6 +6,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
+from app.core.ai_service import extract_linkedin_founder_ideas
 from app.database.db import get_db
 from app.models.idea_model import Idea
 from app.pipelines.hn_pipeline import run_hn_pipeline
@@ -16,6 +17,8 @@ from app.pipelines.reddit_pipeline import run_reddit_pipeline
 from app.schemas import (
     HealthResponse,
     IdeaResponse,
+    LinkedInExtractRequest,
+    LinkedInFounderIdea,
     PipelineStatusResponse,
     PlatformIdeasResponse,
 )
@@ -209,6 +212,26 @@ async def get_daily_hn_ideas(
         count=len(ideas),
         ideas=[IdeaResponse.model_validate(idea) for idea in ideas],
     )
+
+
+@router.post(
+    "/ideas/linkedin/extract",
+    response_model=list[LinkedInFounderIdea],
+    tags=["Ideas"],
+    summary="Extract top 3 founder-style SaaS ideas from LinkedIn post text",
+)
+async def extract_linkedin_ideas(payload: LinkedInExtractRequest):
+    """
+    Analyze one LinkedIn post with a founder/PMF-focused prompt and
+    return exactly the top 3 SaaS opportunities (when available).
+    """
+    ideas = await extract_linkedin_founder_ideas(payload.post_text)
+    if not ideas:
+        raise HTTPException(
+            status_code=422,
+            detail="Could not extract ideas from the provided LinkedIn post text.",
+        )
+    return ideas
 
 
 # ─────────────────────────────────────────────────────────────────────────────

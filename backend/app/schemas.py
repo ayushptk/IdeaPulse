@@ -46,6 +46,24 @@ class GeneratedIdea(BaseModel):
     score: float = Field(..., ge=1, le=10, description="Viability score 1–10")
 
 
+class LinkedInFounderIdea(BaseModel):
+    """Founder-style LinkedIn SaaS idea extraction response."""
+    idea_name: str
+    problem: str
+    target_customer: str
+    solution: str
+    core_features: List[str] = Field(default_factory=list)
+    why_this_will_work: str
+    monetization_model: str
+    competitor_gap: str
+    score: float = Field(..., ge=1, le=10)
+
+
+class LinkedInExtractRequest(BaseModel):
+    """Input payload for LinkedIn post-to-ideas extraction."""
+    post_text: str = Field(..., min_length=20, description="LinkedIn post content")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # API Response Schemas
 # ─────────────────────────────────────────────────────────────────────────────
