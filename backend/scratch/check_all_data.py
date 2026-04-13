@@ -1,6 +1,6 @@
 import asyncio
 from app.database.db import init_db, close_db
-from app.models import Idea, Platform, RawPost
+from app.models import Idea, RawPost
 from sqlalchemy import select, func
 
 async def check():
