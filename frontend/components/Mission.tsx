@@ -7,7 +7,6 @@ export function Mission() {
     { text: "AI", color: "white" },
     { text: "is", color: "white" },
     { type: "icon", icon: "reddit" },
-    { type: "icon", icon: "twitter" },
     { type: "icon", icon: "ph" },
     { text: "revolutionizing", color: "white" },
     { text: "the", color: "gray" },
@@ -54,14 +53,6 @@ export function Mission() {
           <div className="w-8 h-8 md:w-12 md:h-12 bg-[#FF4500] rounded-full flex items-center justify-center translate-y-1 md:translate-y-2">
             <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5 md:w-7 md:h-7">
               <path d="M22.5 12a2.5 2.5 0 00-2.5-2.5c-.71 0-1.35.31-1.78.8-1.57-1.12-3.7-1.87-6.05-1.99l1.26-5.96 5.1.72a2.5 2.5 0 10.38-1.02l-5.61-.79a.5.5 0 00-.59.39l-1.4 6.64c-2.42.1-4.6.86-6.2 2-1.4-.2-2.73 1-2.73 2.7 0 .96.53 1.8 1.34 2.22-.05.28-.08.57-.08.87 0 3.86 4.3 7 9.6 7s9.6-3.14 9.6-7c0-.28-.02-.57-.07-.85 1.05-.33 1.8-1.3 1.8-2.42m-13.43 3.65c0-.66.54-1.2 1.2-1.2.66 0 1.2.54 1.2 1.2 0 .66-.54 1.2-1.2 1.2-.66 0-1.2-.54-1.2-1.2m5.01 3.52c-1.54 0-3.03-.5-3.66-.75a.5.5 0 01.3-.95c.5.21 1.76.66 3.36.66 1.62 0 2.87-.45 3.37-.66a.5.5 0 01.3.95c-.63.26-2.12.75-3.67.75m.86-3.52c0 .66-.54 1.2-1.2 1.2-.66 0-1.2-.54-1.2-1.2 0-.66.54-1.2 1.2-1.2.66 0 1.2.54 1.2 1.2" />
-            </svg>
-          </div>
-        );
-      case 'twitter':
-        return (
-          <div className="w-8 h-8 md:w-12 md:h-12 bg-[#1DA1F2] rounded-full flex items-center justify-center translate-y-1 md:translate-y-2">
-            <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4 md:w-6 md:h-6">
-              <path d="M23.95 4.57a10 10 0 01-2.82.77 4.96 4.96 0 002.16-2.72c-.95.55-2.02.95-3.13 1.17a4.92 4.92 0 00-8.39 4.48A14 14 0 011.67 3.15 4.92 4.92 0 003.2 9.72a4.9 4.9 0 01-2.22-.61v.06a4.92 4.92 0 003.95 4.83 4.9 4.9 0 01-2.22.08 4.93 4.93 0 004.6 3.42A9.87 9.87 0 010 19.54a13.94 13.94 0 007.55 2.21c9.06 0 14-7.51 14-14v-.64a10.05 10.05 0 002.4-2.54z" />
             </svg>
           </div>
         );

@@ -18,7 +18,7 @@ class NormalizedPost(BaseModel):
     Standardized representation of a post from ANY platform.
     Every platform service must emit this format.
     """
-    source: str = Field(..., description="Platform name (reddit, twitter, etc.)")
+    source: str = Field(..., description="Platform name (reddit, producthunt, etc.)")
     text: str = Field(..., description="Full text content of the post")
     engagement: int = Field(0, description="Engagement metric (upvotes, likes, etc.)")
     timestamp: str = Field("", description="ISO-8601 timestamp of the post")

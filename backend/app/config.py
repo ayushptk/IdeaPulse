@@ -28,9 +28,6 @@ class Settings(BaseSettings):
     REDDIT_CLIENT_SECRET: str = ""
     REDDIT_USER_AGENT: str = "IdeaForge/1.0"
 
-    # ── Twitter / X API ──
-    TWITTER_BEARER_TOKEN: str = ""
-
     # ── Product Hunt API ──
     PRODUCTHUNT_API_KEY: str = ""
     PRODUCTHUNT_API_SECRET: str = ""

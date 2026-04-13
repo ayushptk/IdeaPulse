@@ -1,6 +1,5 @@
-
 import logging
-from typing import Optional
+from datetime import datetime, time, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, select
@@ -14,7 +13,6 @@ from app.pipelines.indie_pipeline import run_indie_pipeline
 from app.pipelines.linkedin_pipeline import run_linkedin_pipeline
 from app.pipelines.producthunt_pipeline import run_producthunt_pipeline
 from app.pipelines.reddit_pipeline import run_reddit_pipeline
-from app.pipelines.twitter_pipeline import run_twitter_pipeline
 from app.schemas import (
     HealthResponse,
     IdeaResponse,
@@ -31,7 +29,6 @@ router = APIRouter()
 PLATFORM_PIPELINES = {
     "reddit": run_reddit_pipeline,
     "producthunt": run_producthunt_pipeline,
-    "twitter": run_twitter_pipeline,
     "hn": run_hn_pipeline,
     "linkedin": run_linkedin_pipeline,
     "indie": run_indie_pipeline,
@@ -40,7 +37,6 @@ PLATFORM_PIPELINES = {
 PLATFORM_ALIASES = {
     "indiehackers": "indie",
     "hackernews": "hn",
-    "x": "twitter",
 }
 
 
@@ -85,12 +81,16 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 async def get_platform_ideas(
     platform: str,
     limit: int = Query(default=5, ge=1, le=50, description="Number of ideas to return"),
+    refresh: bool = Query(
+        default=False,
+        description="If true, runs the platform pipeline when no ideas exist yet",
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Retrieve the top-N highest-scored ideas for a given platform.
 
-    Supported platforms: reddit, producthunt, twitter, hn, linkedin, indie
+    Supported platforms: reddit, producthunt, hn, linkedin, indie
     """
     resolved = _resolve_platform(platform)
 
@@ -111,6 +111,21 @@ async def get_platform_ideas(
         .limit(limit)
     )
     ideas = result.scalars().all()
+
+    # Optional: run pipeline on-demand for empty platforms
+    if refresh and not ideas:
+        try:
+            pipeline_fn = PLATFORM_PIPELINES[resolved]
+            await pipeline_fn(db)
+        except Exception as e:
+            logger.error(f"Pipeline [{resolved}] refresh failed: {e}")
+        result = await db.execute(
+            select(Idea)
+            .where(Idea.platform == platform_db_name)
+            .order_by(desc(Idea.score), desc(Idea.created_at))
+            .limit(limit)
+        )
+        ideas = result.scalars().all()
 
     return PlatformIdeasResponse(
         platform=resolved,
@@ -150,6 +165,50 @@ async def get_all_ideas(
         ))
 
     return all_platforms
+
+
+@router.get(
+    "/ideas/hn/daily",
+    response_model=PlatformIdeasResponse,
+    tags=["Ideas"],
+    summary="Get today's 5 Hacker News SaaS ideas",
+)
+async def get_daily_hn_ideas(
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Return up to 5 ideas generated today from the HN pipeline.
+    If no ideas were generated today yet, falls back to latest 5 HN ideas.
+    """
+    utc_today_start = datetime.combine(
+        datetime.now(timezone.utc).date(),
+        time.min,
+        tzinfo=timezone.utc,
+    )
+
+    result = await db.execute(
+        select(Idea)
+        .where(Idea.platform == "hn", Idea.created_at >= utc_today_start)
+        .order_by(desc(Idea.score), desc(Idea.created_at))
+        .limit(5)
+    )
+    ideas = result.scalars().all()
+
+    # Fallback so the endpoint always returns useful data.
+    if not ideas:
+        fallback_result = await db.execute(
+            select(Idea)
+            .where(Idea.platform == "hn")
+            .order_by(desc(Idea.score), desc(Idea.created_at))
+            .limit(5)
+        )
+        ideas = fallback_result.scalars().all()
+
+    return PlatformIdeasResponse(
+        platform="hn",
+        count=len(ideas),
+        ideas=[IdeaResponse.model_validate(idea) for idea in ideas],
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -233,3 +292,4 @@ async def trigger_all_pipelines(
             ))
 
     return results
+

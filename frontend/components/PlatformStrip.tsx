@@ -8,12 +8,6 @@ const RedditIcon = () => (
   </svg>
 );
 
-const TwitterXIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
-
 const ProductHuntIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
     <path d="M13.604 8.4h-3.405V12h3.405a1.8 1.8 0 0 0 0-3.6M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0m1.604 14.4H10.2V18H7.8V6h5.804a4.2 4.2 0 0 1 0 8.4" />
@@ -44,12 +38,6 @@ const platforms = [
     icon: RedditIcon,
     color: "#FF4500",
     label: "r/entrepreneur",
-  },
-  {
-    name: "Twitter / X",
-    icon: TwitterXIcon,
-    color: "#E7E9EA",
-    label: "@founders",
   },
   {
     name: "Product Hunt",

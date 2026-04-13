@@ -49,9 +49,9 @@ async def get_db() -> AsyncSession:
 
 
 async def init_db() -> None:
-    """Create all tables on startup (for development convenience)."""
+    """Create all tables and seed initial data on startup."""
     async with engine.begin() as conn:
-        from app.models.idea_model import Idea  # noqa: F401 — register model
+        from app.models import Idea, Platform, RawPost  # noqa: F401
         await conn.run_sync(Base.metadata.create_all)
 
 

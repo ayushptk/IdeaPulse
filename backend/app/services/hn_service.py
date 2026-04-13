@@ -1,8 +1,12 @@
 """
 Hacker News data collection service.
 
-Uses the official HN Algolia API (free, no auth required).
-Fetches top stories, Show HN posts, and Ask HN discussions.
+Uses official Hacker News Firebase API endpoints:
+  - /v0/newstories.json
+  - /v0/askstories.json
+  - /v0/showstories.json
+  - /v0/topstories.json
+  - /v0/item/{id}.json
 """
 
 import logging
@@ -17,111 +21,109 @@ from app.schemas import NormalizedPost
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-HN_ALGOLIA_URL = "https://hn.algolia.com/api/v1"
-
-# ── Search categories for diverse problem discovery ──
-SEARCH_QUERIES = [
-    {"query": "Show HN", "tags": "show_hn"},
-    {"query": "Ask HN", "tags": "ask_hn"},
-    {"query": "frustrated tool software", "tags": "story"},
-    {"query": "I wish there was", "tags": "story"},
-    {"query": "looking for alternative", "tags": "story"},
-    {"query": "SaaS idea startup", "tags": "story"},
-]
+HN_BASE_URL = "https://hacker-news.firebaseio.com/v0"
+FEED_ENDPOINTS = (
+    "newstories",
+    "askstories",
+    "showstories",
+    "topstories",
+)
 
 
-async def _search_hn(
-    client: httpx.AsyncClient,
-    query: str,
-    tags: str,
-    hits_per_page: int = 20,
-) -> List[dict]:
-    """Search Hacker News via Algolia API."""
-    params = {
-        "query": query,
-        "tags": tags,
-        "hitsPerPage": hits_per_page,
-        "numericFilters": "points>5",  # Filter out low-quality posts
-    }
-    response = await client.get(f"{HN_ALGOLIA_URL}/search_by_date", params=params)
+async def _fetch_feed_ids(client: httpx.AsyncClient, feed: str) -> List[int]:
+    """Fetch story IDs from a single HN feed endpoint."""
+    response = await client.get(f"{HN_BASE_URL}/{feed}.json")
     response.raise_for_status()
-    return response.json().get("hits", [])
+    data = response.json()
+    return data if isinstance(data, list) else []
 
 
-async def _fetch_top_stories(client: httpx.AsyncClient, limit: int = 30) -> List[dict]:
-    """Fetch current top stories from HN front page."""
-    response = await client.get(f"{HN_ALGOLIA_URL}/search", params={
-        "tags": "front_page",
-        "hitsPerPage": limit,
-    })
+async def _fetch_item(client: httpx.AsyncClient, item_id: int) -> dict | None:
+    """Fetch details for one HN item by ID."""
+    response = await client.get(f"{HN_BASE_URL}/item/{item_id}.json")
     response.raise_for_status()
-    return response.json().get("hits", [])
+    item = response.json()
+    return item if isinstance(item, dict) else None
 
 
-def _parse_hit(hit: dict) -> NormalizedPost | None:
-    """Convert an Algolia hit into a NormalizedPost."""
-    title = hit.get("title", "").strip()
-    story_text = hit.get("story_text") or hit.get("comment_text") or ""
-    text = f"{title}\n{story_text}".strip() if story_text else title
+def _to_iso_timestamp(unix_ts: int | None) -> str:
+    """Convert Unix timestamp (seconds) to ISO-8601 UTC."""
+    if not unix_ts:
+        return datetime.now(timezone.utc).isoformat()
+    return datetime.fromtimestamp(unix_ts, tz=timezone.utc).isoformat()
 
-    if len(text) < 20:
+
+def _parse_item(item: dict) -> NormalizedPost | None:
+    """Convert a Firebase item payload to a NormalizedPost."""
+    if item.get("type") != "story":
         return None
 
-    engagement = hit.get("points", 0) + hit.get("num_comments", 0)
+    title = (item.get("title") or "").strip()
+    body = (item.get("text") or "").strip()
 
-    created = hit.get("created_at", "")
-    try:
-        timestamp = datetime.fromisoformat(created.replace("Z", "+00:00")).isoformat()
-    except (ValueError, AttributeError):
-        timestamp = datetime.now(timezone.utc).isoformat()
+    if not title:
+        return None
 
-    object_id = hit.get("objectID", "")
+    combined = f"{title}\n{body}".strip() if body else title
+    if len(combined) < 20:
+        return None
+
+    score = int(item.get("score") or 0)
+    comments = int(item.get("descendants") or 0)
+    engagement = score + comments
+    item_id = item.get("id")
+    item_url = item.get("url") or f"https://news.ycombinator.com/item?id={item_id}"
+
     return NormalizedPost(
         source="hn",
-        text=text[:2000],
+        text=combined[:2000],
         engagement=engagement,
-        timestamp=timestamp,
-        url=f"https://news.ycombinator.com/item?id={object_id}",
+        timestamp=_to_iso_timestamp(item.get("time")),
+        url=item_url,
     )
 
 
 async def fetch_hn_posts() -> List[NormalizedPost]:
     """
-    Main entry point — fetches posts from Hacker News.
-    Combines front-page stories with targeted problem searches.
+    Main entry point — fetches HN stories from official Firebase feeds.
+    Mixes new/ask/show/top feeds for broad discovery and normalizes them.
     """
     posts: List[NormalizedPost] = []
-    per_query = max(10, settings.MAX_POSTS_PER_FETCH // (len(SEARCH_QUERIES) + 1))
+    seen_ids: set[int] = set()
+    max_per_feed = max(10, settings.MAX_POSTS_PER_FETCH // len(FEED_ENDPOINTS))
 
     async with httpx.AsyncClient(timeout=30.0) as client:
-        # Fetch front-page stories
-        try:
-            top = await _fetch_top_stories(client, limit=per_query)
-            for hit in top:
-                parsed = _parse_hit(hit)
-                if parsed:
-                    posts.append(parsed)
-            logger.info(f"HN: fetched {len(top)} front-page stories")
-        except httpx.HTTPError as e:
-            logger.error(f"HN: front-page fetch failed: {e}")
-
-        # Run targeted searches
-        for search in SEARCH_QUERIES:
+        for feed in FEED_ENDPOINTS:
             try:
-                hits = await _search_hn(
-                    client,
-                    query=search["query"],
-                    tags=search["tags"],
-                    hits_per_page=per_query,
-                )
-                for hit in hits:
-                    parsed = _parse_hit(hit)
-                    if parsed:
-                        posts.append(parsed)
-                logger.info(f"HN: search '{search['query']}' returned {len(hits)} hits")
+                ids = await _fetch_feed_ids(client, feed)
+                logger.info(f"HN: feed '{feed}' returned {len(ids)} ids")
             except httpx.HTTPError as e:
-                logger.error(f"HN: search '{search['query']}' failed: {e}")
+                logger.error(f"HN: feed '{feed}' fetch failed: {e}")
                 continue
 
+            for item_id in ids[:max_per_feed]:
+                if item_id in seen_ids:
+                    continue
+                seen_ids.add(item_id)
+
+                try:
+                    item = await _fetch_item(client, item_id)
+                except httpx.HTTPError as e:
+                    logger.warning(f"HN: item {item_id} fetch failed: {e}")
+                    continue
+
+                if not item:
+                    continue
+
+                parsed = _parse_item(item)
+                if parsed:
+                    posts.append(parsed)
+
+                if len(posts) >= settings.MAX_POSTS_PER_FETCH:
+                    logger.info(
+                        f"HN: hit MAX_POSTS_PER_FETCH={settings.MAX_POSTS_PER_FETCH}"
+                    )
+                    return posts
+
     logger.info(f"HN: total {len(posts)} normalized posts collected")
-    return posts[:settings.MAX_POSTS_PER_FETCH]
+    return posts

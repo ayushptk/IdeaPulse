@@ -78,7 +78,7 @@ app = FastAPI(
     version=settings.APP_VERSION,
     description=(
         "AI-powered platform that discovers real-world problems from Reddit, "
-        "Product Hunt, Twitter, Hacker News, LinkedIn, and Indie Hackers — "
+        "Product Hunt, Hacker News, LinkedIn, and Indie Hackers — "
         "then generates actionable SaaS product ideas."
     ),
     docs_url="/docs",

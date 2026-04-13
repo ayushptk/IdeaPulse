@@ -21,7 +21,7 @@ scheduler = AsyncIOScheduler()
 
 async def _run_all_pipelines_job():
     """
-    Scheduled job — runs all 6 platform pipelines sequentially.
+    Scheduled job — runs all configured platform pipelines sequentially.
     Creates its own database session (independent of request lifecycle).
     """
     from app.pipelines.hn_pipeline import run_hn_pipeline
@@ -29,12 +29,10 @@ async def _run_all_pipelines_job():
     from app.pipelines.linkedin_pipeline import run_linkedin_pipeline
     from app.pipelines.producthunt_pipeline import run_producthunt_pipeline
     from app.pipelines.reddit_pipeline import run_reddit_pipeline
-    from app.pipelines.twitter_pipeline import run_twitter_pipeline
 
     pipelines = [
         ("reddit", run_reddit_pipeline),
         ("producthunt", run_producthunt_pipeline),
-        ("twitter", run_twitter_pipeline),
         ("hn", run_hn_pipeline),
         ("linkedin", run_linkedin_pipeline),
         ("indie", run_indie_pipeline),
