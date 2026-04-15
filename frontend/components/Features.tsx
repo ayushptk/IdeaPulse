@@ -4,6 +4,9 @@ import {
   Signal, Wifi, Battery, ChevronLeft, Share, MoreHorizontal, 
   SlidersHorizontal, LayoutGrid, Link2, Table, Check, MessageSquare
 } from "lucide-react";
+import { FaRedditAlien } from "react-icons/fa6";
+import { FaProductHunt } from "react-icons/fa6";
+
 
 interface FloatingCardProps {
   icon: React.ElementType;
@@ -97,7 +100,7 @@ export function Features() {
               {/* Title & Skeletons */}
               <div className="mb-6">
                 <h3 className="font-semibold text-[17px] leading-snug text-white tracking-tight">
-                  SaaS Validation for Q3 2024
+                  SaaS Validation for Q3 2026
                 </h3>
                 <div className="w-[85%] h-2.5 bg-neutral-800 rounded-full mt-3" />
                 <div className="w-[60%] h-2.5 bg-neutral-800 rounded-full mt-2" />
@@ -112,16 +115,16 @@ export function Features() {
                   {/* Item 1 */}
                   <div className="flex-1 bg-neutral-900 rounded-2xl p-3 flex flex-col justify-center items-center">
                     <div className="w-14 h-14 bg-gradient-to-tr from-blue-900/40 to-neutral-800 rounded-lg mb-2 shadow-sm flex items-center justify-center rotate-[-10deg]">
-                      <MessageSquare className="text-blue-500 w-6 h-6" />
+                      <FaRedditAlien className="text-red-500 w-6 h-6" />
                     </div>
                     <span className="text-[11px] font-medium text-neutral-300">Reddit</span>
                   </div>
                   {/* Item 2 */}
                   <div className="flex-1 bg-neutral-900 rounded-2xl p-3 flex flex-col justify-center items-center">
                     <div className="w-full flex-1 flex items-center justify-center">
-                      <span className="text-4xl font-serif text-white">Aa</span>
+                      <FaProductHunt className="text-red-500 w-6 h-6" />
                     </div>
-                    <span className="text-[11px] font-medium text-neutral-300 mt-2">Keywords</span>
+                    <span className="text-[11px] font-medium text-neutral-300 mt-2">Product Hunt</span>
                   </div>
                 </div>
 

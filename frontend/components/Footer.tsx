@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Lightbulb } from "lucide-react";
+import Image from "next/image";
 
 export function Footer() {
   return (
@@ -7,8 +8,8 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-8">
         <div className="col-span-1 md:col-span-2">
           <Link href="/" className="flex items-center gap-2 mb-4">
-            <div className="bg-orange-500/20 p-1.5 rounded-lg border border-orange-500/30">
-              <Lightbulb className="w-5 h-5 text-orange-400" />
+            <div className="">
+          <Image src="/logo.png" alt="Logo" width={20} height={20} />
             </div>
             <span className="font-bold text-lg tracking-tight text-white">IdeaForge AI</span>
           </Link>

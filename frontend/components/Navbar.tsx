@@ -1,14 +1,15 @@
 "use client";
 import Link from "next/link";
 import { Lightbulb } from "lucide-react";
+import Image from "next/image";
 
 export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/50 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="bg-orange-500/20 p-1.5 rounded-lg border border-orange-500/30">
-            <Lightbulb className="w-5 h-5 text-orange-400" />
+          <div className="">
+          <Image src="/logo.png" alt="Logo" width={20} height={20} />
           </div>
           <span className="font-bold text-lg tracking-tight">IdeaForge AI</span>
         </Link>
