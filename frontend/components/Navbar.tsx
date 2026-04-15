@@ -19,8 +19,8 @@ export function Navbar() {
           <Link href="#pricing" className="hover:text-white transition">Pricing</Link>
         </div>
         <div className="flex items-center gap-4 text-sm font-medium">
-          <Link href="#login" className="text-neutral-400 hover:text-white transition">Sign In</Link>
-          <Link href="#pricing" className="bg-white text-black px-4 py-2 rounded-full hover:bg-neutral-200 transition">Get Started</Link>
+          <Link href="/login" className="text-neutral-400 hover:text-white transition">Sign In</Link>
+          <Link href="/login" className="bg-white text-black px-4 py-2 rounded-full hover:bg-neutral-200 transition">Get Started</Link>
         </div>
       </div>
     </nav>
