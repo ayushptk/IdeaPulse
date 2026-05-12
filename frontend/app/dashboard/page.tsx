@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Sparkles, TrendingUp, Clock, Bookmark, ChevronUp, Share2, Compass, Activity } from 'lucide-react';
+import { Sparkles, TrendingUp, Clock, Bookmark, ChevronUp, Share2, Compass, Activity, X } from 'lucide-react';
 
 const categories = ['All Ideas', 'Reddit', 'ProductHunt', 'HackerNews', 'LinkedIn', 'IndieHackers'];
 
@@ -74,6 +74,7 @@ export default function Dashboard() {
   const [ideas, setIdeas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All Ideas');
+  const [selectedIdea, setSelectedIdea] = useState<any>(null);
 
   const fetchIdeas = () => {
     setLoading(true);
@@ -181,7 +182,7 @@ export default function Dashboard() {
               </>
             ) : filteredIdeas.length > 0 ? (
               filteredIdeas.slice(0, 6).map((idea, idx) => (
-                <div key={idea.id || idx} className="bg-[#121214] border border-white/5 rounded-2xl p-6 hover:border-indigo-500/30 transition-all duration-300 group relative overflow-hidden flex flex-col h-full shadow-lg">
+                <div key={idea.id || idx} onClick={() => setSelectedIdea(idea)} className="cursor-pointer bg-[#121214] border border-white/5 rounded-2xl p-6 hover:border-indigo-500/30 transition-all duration-300 group relative overflow-hidden flex flex-col h-full shadow-lg">
                   {/* Soft gradient bg effect */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                   
@@ -204,11 +205,9 @@ export default function Dashboard() {
                     </div>
                   </div>
                   
-                  <h3 className="text-base font-medium text-slate-200 leading-relaxed mb-4 relative z-10 flex-1">{idea.idea}</h3>
-                  
-                  <div className="mb-6 relative z-10 line-clamp-2 text-sm text-slate-500">
-                    <span className="text-slate-400 font-medium">Problem:</span> {idea.problem}
-                  </div>
+                  <h3 className="text-base font-semibold text-slate-100 leading-relaxed mb-3 relative z-10 flex-1 line-clamp-3">
+                    {idea.problem}
+                  </h3>
                   
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5 relative z-10">
                     <div className="flex items-center gap-2">
@@ -254,7 +253,7 @@ export default function Dashboard() {
                 </>
               ) : trendingProblems.length > 0 ? (
                 trendingProblems.map((idea, i) => (
-                  <div key={idea.id || i} className={`flex items-start gap-4 p-5 hover:bg-white/5 transition-colors cursor-pointer group ${i !== trendingProblems.length - 1 ? 'border-b border-white/5' : ''}`}>
+                  <div key={idea.id || i} onClick={() => setSelectedIdea(idea)} className={`flex items-start gap-4 p-5 hover:bg-white/5 transition-colors cursor-pointer group ${i !== trendingProblems.length - 1 ? 'border-b border-white/5' : ''}`}>
                     <div className="flex flex-col items-center justify-center bg-white/5 group-hover:bg-white/10 transition-colors rounded-xl w-14 h-14 shrink-0 border border-white/5">
                       <ChevronUp className="w-4 h-4 text-emerald-400 mb-0.5" />
                       <span className="text-xs font-bold text-slate-300">{Math.round(idea.score * 10)}</span>
@@ -286,7 +285,7 @@ export default function Dashboard() {
                 </>
               ) : newIdeas.length > 0 ? (
                 newIdeas.map((idea, i) => (
-                  <div key={idea.id || i} className={`group cursor-pointer ${i !== newIdeas.length - 1 ? 'pb-5 border-b border-white/5' : ''}`}>
+                  <div key={idea.id || i} onClick={() => setSelectedIdea(idea)} className={`group cursor-pointer ${i !== newIdeas.length - 1 ? 'pb-5 border-b border-white/5' : ''}`}>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-[10px] font-semibold tracking-wider uppercase text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
                         {idea.platform}
@@ -295,7 +294,9 @@ export default function Dashboard() {
                         {idea.created_at ? formatTimeAgo(idea.created_at) : 'Just now'}
                       </span>
                     </div>
-                    <h4 className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors leading-relaxed line-clamp-2">{idea.idea}</h4>
+                    <h4 className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors leading-relaxed line-clamp-2">
+                      {idea.idea.includes('AI-powered solution') ? idea.problem : idea.idea}
+                    </h4>
                   </div>
                 ))
               ) : (
@@ -305,6 +306,96 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Idea Detail Modal */}
+      {selectedIdea && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#121214] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            <button 
+              onClick={() => setSelectedIdea(null)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="p-8 space-y-6">
+              <div className="flex gap-2 items-center mb-2">
+                <span className={`text-xs font-bold tracking-wider uppercase px-2.5 py-1 rounded-md border ${PLATFORM_COLORS[selectedIdea.platform?.toLowerCase()] || 'bg-white/5 text-slate-300 border-white/5'}`}>
+                  {selectedIdea.platform}
+                </span>
+                <span className="text-xs text-slate-400 bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
+                  Score: {Math.round(selectedIdea.score * 10)}
+                </span>
+              </div>
+              
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2 leading-tight">
+                  {selectedIdea.idea_name || selectedIdea.idea || "SaaS Idea"}
+                </h2>
+                {selectedIdea.solution && selectedIdea.solution !== selectedIdea.idea && (
+                   <p className="text-indigo-300 font-medium">{selectedIdea.solution}</p>
+                )}
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">The Problem</h3>
+                  <p className="text-slate-200 leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5">
+                    {selectedIdea.problem}
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Target Audience</h3>
+                  <p className="text-slate-200 leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5">
+                    {selectedIdea.users || selectedIdea.target_customer || "General audience"}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Core Features</h3>
+                  <ul className="grid grid-cols-1 gap-2">
+                    {(selectedIdea.features || selectedIdea.core_features || []).map((feature: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2 bg-white/5 p-3 rounded-lg border border-white/5">
+                        <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                        <span className="text-sm text-slate-200">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Monetization</h3>
+                  <p className="text-slate-200 leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5">
+                    {selectedIdea.monetization || selectedIdea.monetization_model || "Not specified"}
+                  </p>
+                </div>
+
+                {(selectedIdea.why_this_will_work || selectedIdea.competitor_gap) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     {selectedIdea.why_this_will_work && (
+                       <div>
+                          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Why it works</h3>
+                          <p className="text-slate-200 text-sm leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5 h-full">
+                            {selectedIdea.why_this_will_work}
+                          </p>
+                       </div>
+                     )}
+                     {selectedIdea.competitor_gap && (
+                       <div>
+                          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Competitor Gap</h3>
+                          <p className="text-slate-200 text-sm leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5 h-full">
+                            {selectedIdea.competitor_gap}
+                          </p>
+                       </div>
+                     )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

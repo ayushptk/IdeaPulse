@@ -275,11 +275,11 @@ def _generate_fallback_ideas(
             users=f"Professionals encountering this issue on {platform}",
             idea=(
                 f"Idea Name: {platform.title()} Ops Optimizer {i + 1} | "
-                f"Solution: AI-powered solution for the problem in cluster {i + 1} | "
+                f"Solution: Automated workspace integration for detected issues | "
                 f"Why this will work: teams already pay for productivity and automation | "
                 f"Competitor gap: existing tools are fragmented and not workflow-native"
             ) if platform == "linkedin"
-            else f"AI-powered solution for the problem described in cluster {i + 1}",
+            else f"Specialized SaaS solution for {platform} community needs",
             features=[
                 "Problem detection dashboard",
                 "Automated workflow engine",

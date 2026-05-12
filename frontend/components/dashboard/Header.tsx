@@ -18,9 +18,7 @@ export function Header() {
               placeholder="Search ideas, problems, or tags..." 
               className="block w-64 lg:w-96 pl-10 pr-4 py-2 bg-white/5 border border-white/5 rounded-lg text-sm text-white placeholder-slate-500 focus:border-indigo-500/50 focus:bg-white/10 focus:ring-4 focus:ring-indigo-500/10 transition-all duration-300 outline-none"
             />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-[10px] text-slate-500 font-medium border border-white/10 rounded px-1.5 py-0.5 bg-white/5">⌘K</span>
-            </div>
+           
           </div>
         </div>
       </div>
