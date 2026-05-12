@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Sparkles, TrendingUp, Clock, Bookmark, ChevronUp, Share2, Compass, Activity, X } from 'lucide-react';
 
 const categories = ['All Ideas', 'Reddit', 'ProductHunt', 'HackerNews', 'LinkedIn', 'IndieHackers'];
@@ -71,6 +73,7 @@ const formatTimeAgo = (dateStr: string) => {
 };
 
 export default function Dashboard() {
+  const router = useRouter();
   const [ideas, setIdeas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All Ideas');
@@ -239,9 +242,14 @@ export default function Dashboard() {
         <div className="space-y-8">
           {/* Trending Problems */}
           <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-rose-400" />
-              <h2 className="text-xl font-semibold text-white">Trending Problems</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-rose-400" />
+                <h2 className="text-xl font-semibold text-white">Trending Problems</h2>
+              </div>
+              <Link href="/dashboard/trending" className="text-sm text-rose-400 hover:text-rose-300 font-medium transition-colors">
+                View all
+              </Link>
             </div>
             <div className="bg-[#121214] border border-white/5 rounded-2xl overflow-hidden shadow-lg">
               {loading ? (
@@ -253,7 +261,11 @@ export default function Dashboard() {
                 </>
               ) : trendingProblems.length > 0 ? (
                 trendingProblems.map((idea, i) => (
-                  <div key={idea.id || i} onClick={() => setSelectedIdea(idea)} className={`flex items-start gap-4 p-5 hover:bg-white/5 transition-colors cursor-pointer group ${i !== trendingProblems.length - 1 ? 'border-b border-white/5' : ''}`}>
+                  <div key={idea.id || i} onClick={() => {
+                    const id = idea.id || encodeURIComponent(idea.problem?.slice(0, 40));
+                    sessionStorage.setItem(`trending_${id}`, JSON.stringify(idea));
+                    router.push(`/dashboard/trending/${id}`);
+                  }} className={`flex items-start gap-4 p-5 hover:bg-white/5 transition-colors cursor-pointer group ${i !== trendingProblems.length - 1 ? 'border-b border-white/5' : ''}`}>
                     <div className="flex flex-col items-center justify-center bg-white/5 group-hover:bg-white/10 transition-colors rounded-xl w-14 h-14 shrink-0 border border-white/5">
                       <ChevronUp className="w-4 h-4 text-emerald-400 mb-0.5" />
                       <span className="text-xs font-bold text-slate-300">{Math.round(idea.score * 10)}</span>
