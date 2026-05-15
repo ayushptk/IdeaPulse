@@ -15,6 +15,7 @@ import {
   ChevronDown,
   X,
 } from "lucide-react";
+import { useSavedIdeas } from "@/hooks/useSavedIdeas";
 
 const PLATFORM_META: Record<string, { label: string; color: string; dot: string }> = {
   reddit: { label: "Reddit", color: "text-orange-400", dot: "bg-orange-400" },
@@ -43,7 +44,7 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-function IdeaCardGrid({ idea, onClick }: { idea: any; onClick: () => void }) {
+function IdeaCardGrid({ idea, onClick, onBookmark, saved }: { idea: any; onClick: () => void; onBookmark: (e: React.MouseEvent) => void; saved: boolean }) {
   const meta = PLATFORM_META[idea.platform?.toLowerCase()] || { label: idea.platform, color: "text-slate-400", dot: "bg-slate-400" };
   const pct = Math.round(idea.score * 10);
 
@@ -75,17 +76,27 @@ function IdeaCardGrid({ idea, onClick }: { idea: any; onClick: () => void }) {
           ))}
         </div>
         <button
-          onClick={(e) => e.stopPropagation()}
-          className="p-1.5 text-slate-600 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+          onClick={onBookmark}
+          title={saved ? 'Unsave idea' : 'Save idea'}
+          className={`p-1.5 rounded-lg transition-all duration-200 ${
+            saved
+              ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20'
+              : 'text-slate-600 hover:text-white hover:bg-white/10'
+          }`}
         >
-          <Bookmark className="w-3.5 h-3.5" />
+          <Bookmark className={`w-3.5 h-3.5 transition-all ${saved ? 'fill-indigo-400' : ''}`} />
         </button>
       </div>
     </div>
   );
 }
 
-function IdeaCardList({ idea, onClick }: { idea: any; onClick: () => void }) {
+
+
+
+
+
+function IdeaCardList({ idea, onClick, onBookmark, saved }: { idea: any; onClick: () => void; onBookmark: (e: React.MouseEvent) => void; saved: boolean }) {
   const meta = PLATFORM_META[idea.platform?.toLowerCase()] || { label: idea.platform, color: "text-slate-400", dot: "bg-slate-400" };
 
   return (
@@ -111,8 +122,16 @@ function IdeaCardList({ idea, onClick }: { idea: any; onClick: () => void }) {
       </div>
 
       <div className="flex items-center gap-2 shrink-0 pt-0.5">
-        <button onClick={(e) => e.stopPropagation()} className="p-1.5 text-slate-600 hover:text-white rounded-lg hover:bg-white/10 transition-colors">
-          <Bookmark className="w-3.5 h-3.5" />
+        <button
+          onClick={onBookmark}
+          title={saved ? 'Unsave idea' : 'Save idea'}
+          className={`p-1.5 rounded-lg transition-all duration-200 ${
+            saved
+              ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20'
+              : 'text-slate-600 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <Bookmark className={`w-3.5 h-3.5 transition-all ${saved ? 'fill-indigo-400' : ''}`} />
         </button>
         <ArrowUpRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
       </div>
@@ -163,6 +182,7 @@ export default function ExplorePage() {
   const [sortBy, setSortBy] = useState("score");
   const [showSort, setShowSort] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const { toggleSave, isSaved } = useSavedIdeas();
 
   useEffect(() => {
     fetch("http://localhost:8000/api/v1/ideas?limit=20")
@@ -317,7 +337,13 @@ export default function ExplorePage() {
             ? Array.from({ length: 9 }).map((_, i) => <SkeletonGrid key={i} />)
             : filtered.length > 0
             ? filtered.map((idea, idx) => (
-                <IdeaCardGrid key={idea.id || idx} idea={idea} onClick={() => handleIdeaClick(idea)} />
+                <IdeaCardGrid
+                  key={idea.id || idx}
+                  idea={idea}
+                  onClick={() => handleIdeaClick(idea)}
+                  onBookmark={(e) => { e.stopPropagation(); toggleSave(idea); }}
+                  saved={isSaved(idea)}
+                />
               ))
             : (
               <div className="col-span-full py-20 flex flex-col items-center gap-3 text-center">
@@ -335,7 +361,13 @@ export default function ExplorePage() {
             ? Array.from({ length: 8 }).map((_, i) => <SkeletonList key={i} />)
             : filtered.length > 0
             ? filtered.map((idea, idx) => (
-                <IdeaCardList key={idea.id || idx} idea={idea} onClick={() => handleIdeaClick(idea)} />
+                <IdeaCardList
+                  key={idea.id || idx}
+                  idea={idea}
+                  onClick={() => handleIdeaClick(idea)}
+                  onBookmark={(e) => { e.stopPropagation(); toggleSave(idea); }}
+                  saved={isSaved(idea)}
+                />
               ))
             : (
               <div className="py-20 flex flex-col items-center gap-3 text-center">

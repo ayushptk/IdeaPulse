@@ -43,10 +43,6 @@ export function LiveIdeaPreview() {
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="glass p-4 rounded-xl">
-                    <div className="text-xl font-bold text-white mb-1">$29/mo</div>
-                    <div className="text-xs text-neutral-400">Suggested Pricing</div>
-                  </div>
-                  <div className="glass p-4 rounded-xl">
                     <div className="text-xl font-bold text-white mb-1">Easy</div>
                     <div className="text-xs text-neutral-400">Dev Complexity</div>
                   </div>

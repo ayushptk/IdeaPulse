@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Sparkles, TrendingUp, Clock, Bookmark, ChevronUp, Share2, Compass, Activity, X } from 'lucide-react';
+import { useSavedIdeas } from '@/hooks/useSavedIdeas';
 
 const categories = ['All Ideas', 'Reddit', 'ProductHunt', 'HackerNews', 'LinkedIn', 'IndieHackers'];
 
@@ -78,6 +79,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All Ideas');
   const [selectedIdea, setSelectedIdea] = useState<any>(null);
+  const { toggleSave, isSaved } = useSavedIdeas();
 
   const fetchIdeas = () => {
     setLoading(true);
@@ -220,11 +222,22 @@ export default function Dashboard() {
                       <span className="text-xs text-slate-400 font-medium capitalize">{idea.platform}</span>
                     </div>
                     <div className="flex gap-1">
-                      <button className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); }}
+                        className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                      >
                         <Share2 className="w-4 h-4" />
                       </button>
-                      <button className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
-                        <Bookmark className="w-4 h-4" />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleSave(idea); }}
+                        className={`p-2 rounded-lg transition-all duration-200 ${
+                          isSaved(idea)
+                            ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20'
+                            : 'text-slate-400 hover:bg-white/10 hover:text-white'
+                        }`}
+                        title={isSaved(idea) ? 'Unsave idea' : 'Save idea'}
+                      >
+                        <Bookmark className={`w-4 h-4 transition-all ${isSaved(idea) ? 'fill-indigo-400' : ''}`} />
                       </button>
                     </div>
                   </div>

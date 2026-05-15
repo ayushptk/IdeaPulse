@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { FaRedditAlien } from "react-icons/fa6";
 import { FaProductHunt } from "react-icons/fa6";
+import { FaLinkedin } from "react-icons/fa";
+import { FaHackerNews } from "react-icons/fa";
 
 
 interface FloatingCardProps {
@@ -126,38 +128,23 @@ export function Features() {
                     </div>
                     <span className="text-[11px] font-medium text-neutral-300 mt-2">Product Hunt</span>
                   </div>
+                  
                 </div>
+                  <div className="flex-1 bg-neutral-900 rounded-2xl p-3 flex flex-col justify-center items-center">
+                    <div className="w-full flex-1 flex items-center justify-center">
+                      <FaLinkedin className="text-red-500 w-6 h-6" />
+                    </div>
+                    <span className="text-[11px] font-medium text-neutral-300 mt-2">Linkedin</span>
+                  </div>
+                  
+                  
 
                 {/* Bottom Row */}
                 <div className="flex gap-2 h-24">
                   {/* Cover */}
-                  <div className="flex-1 bg-neutral-900 rounded-xl flex flex-col overflow-hidden pb-2">
-                    <div className="h-10 w-full bg-gradient-to-br from-pink-900/50 to-rose-900/30 mb-2 flex items-center justify-center p-1 overflow-hidden relative">
-                      <div className="w-10 h-10 rounded-full bg-white/40 blur-xl absolute -right-2 -top-2"></div>
-                    </div>
-                    <span className="text-[9px] font-medium text-neutral-400 text-center uppercase tracking-wider">Niche</span>
-                  </div>
-                  
                   {/* Backdrop */}
-                  <div className="flex-[1.2] bg-[#c4f03a] rounded-xl flex items-end justify-center relative overflow-hidden pb-2 group">
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/5"></div>
-                    {/* Wavy shape */}
-                    <div className="absolute -left-4 top-0 w-24 h-24 bg-white/20 rounded-full blur-[2px] -translate-y-10"></div>
-                    <span className="text-[10px] font-bold text-neutral-900 relative z-10 uppercase tracking-wider">Demand</span>
-                  </div>
-
                   {/* Doc Color */}
-                  <div className="flex-1 bg-neutral-900 rounded-xl flex flex-col justify-end items-center pb-2 relative">
-                    <div className="absolute top-3 w-full px-2 flex flex-col gap-1.5 z-10">
-                      <div className="w-full h-1.5 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full relative">
-                        <div className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border border-neutral-200 rounded-full shadow-sm"></div>
-                      </div>
-                      <div className="w-full h-1.5 bg-gradient-to-r from-indigo-500 to-purple-800 rounded-full relative">
-                         <div className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border border-neutral-200 rounded-full shadow-sm"></div>
-                      </div>
-                    </div>
-                    <span className="text-[9px] font-medium text-neutral-400 text-center uppercase tracking-wider relative bottom-0">Pricing</span>
-                  </div>
+                 
                 </div>
               </div>
             </div>

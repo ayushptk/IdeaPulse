@@ -23,16 +23,16 @@ interface GlobeCdnProps {
 }
 
 const defaultMarkers: CdnMarker[] = [
-  { id: "cdn-iad", location: [38.95, -77.45], region: "ashburn" },
-  { id: "cdn-sfo", location: [37.62, -122.38], region: "san francisco" },
-  { id: "cdn-cdg", location: [49.01, 2.55], region: "paris" },
-  { id: "cdn-hnd", location: [35.55, 139.78], region: "tokyo" },
-  { id: "cdn-syd", location: [-33.95, 151.18], region: "sydney" },
-  { id: "cdn-gru", location: [-23.43, -46.47], region: "sao paulo" },
-  { id: "cdn-sin", location: [1.36, 103.99], region: "singapore" },
-  { id: "cdn-arn", location: [59.65, 17.93], region: "stockholm" },
-  { id: "cdn-dub", location: [53.43, -6.25], region: "dublin" },
-  { id: "cdn-bom", location: [19.09, 72.87], region: "mumbai" },
+  { id: "cdn-iad", location: [38.95, -77.45], region: "pdf to images " },
+  { id: "cdn-sfo", location: [37.62, -122.38], region: "linkedin post generator" },
+  { id: "cdn-cdg", location: [49.01, 2.55], region: "image to text" },
+  { id: "cdn-hnd", location: [35.55, 139.78], region: "saas idea generator" },
+  { id: "cdn-syd", location: [-33.95, 151.18], region: "reddit post generator" },
+  { id: "cdn-gru", location: [-23.43, -46.47], region: "Freelancer Client Portal" },
+  { id: "cdn-sin", location: [1.36, 103.99], region: "Micro Learning Platform" },
+  { id: "cdn-arn", location: [59.65, 17.93], region: "Figma Feedback Tool" },
+  { id: "cdn-dub", location: [53.43, -6.25], region: "Business Review Booster" },
+  { id: "cdn-bom", location: [19.09, 72.87], region: "Subscription Tracker for Users" },
 ]
 
 const defaultArcs: CdnArc[] = [

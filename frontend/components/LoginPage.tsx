@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import { EyeOff, Eye } from 'lucide-react';
+import { signIn } from "next-auth/react";
 
 const carouselData = [
   {
@@ -106,6 +107,7 @@ const LoginPage: React.FC = () => {
             {/* Google Login Button */}
             <button 
               type="button"
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               className="w-full h-[60px] bg-transparent border border-[#E5E7EB] rounded-2xl flex items-center justify-center gap-3 text-[14px] font-semibold text-[#0D0D0D] hover:bg-black/5 transition-all active:scale-[0.99]"
             >
               <FcGoogle size={24} />
