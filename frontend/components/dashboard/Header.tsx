@@ -1,7 +1,15 @@
+"use client";
+
 import { Search, Bell, Menu } from 'lucide-react';
 import Image from 'next/image';
+import { useSession } from 'next-auth/react';
 
 export function Header() {
+  const { data: session } = useSession();
+  
+  const firstName = session?.user?.name?.split(' ')[0] || 'User';
+  const avatarUrl = session?.user?.image || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex';
+
   return (
     <header className="h-20 bg-[#09090b]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 md:px-10 sticky top-0 z-10 transition-all">
       <div className="flex items-center gap-4">
@@ -33,10 +41,11 @@ export function Header() {
 
         <button className="flex items-center gap-3 hover:opacity-80 transition-opacity rounded-full p-1 pr-3 bg-white/5 border border-white/5">
           <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-800">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="User avatar" className="w-full h-full object-cover" />
+            {/* Using img tag to support external googleusercontent images without next.config.js whitelisting, or standard avatar */}
+            <img src={avatarUrl} alt="User avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
           <div className="text-left hidden md:block">
-            <p className="text-sm font-medium text-white leading-tight">Alex</p>
+            <p className="text-sm font-medium text-white leading-tight">{firstName}</p>
           </div>
         </button>
       </div>

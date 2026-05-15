@@ -136,8 +136,9 @@ export function Features() {
                     </div>
                     <span className="text-[11px] font-medium text-neutral-300 mt-2">Linkedin</span>
                   </div>
-                  
-                  
+
+
+8
 
                 {/* Bottom Row */}
                 <div className="flex gap-2 h-24">
