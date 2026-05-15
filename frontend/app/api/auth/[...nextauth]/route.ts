@@ -1,5 +1,6 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 
@@ -9,6 +10,38 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+        try {
+          const res = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password
+            }),
+            headers: { "Content-Type": "application/json" }
+          });
+          const data = await res.json();
+          if (res.ok && data.user) {
+            return {
+              id: data.user.id.toString(),
+              email: data.user.email,
+              name: data.user.name,
+            };
+          }
+          return null;
+        } catch (e) {
+          console.error("Login error:", e);
+          return null;
+        }
+      }
+    })
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
@@ -26,6 +59,8 @@ export const authOptions: NextAuthOptions = {
             }),
           });
           if (res.ok) {
+            const data = await res.json();
+            user.id = data.user?.id?.toString() || user.id;
             return true;
           }
           return false;
@@ -36,10 +71,15 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
+    async jwt({ token, user, account }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
     async session({ session, token }) {
       if (session.user) {
-        // You can attach additional data to session from token if needed
-        (session.user as any).id = token.sub;
+        (session.user as any).id = token.id as string;
       }
       return session;
     },

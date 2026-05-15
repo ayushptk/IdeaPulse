@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { EyeOff, Eye } from 'lucide-react';
 import { signIn } from "next-auth/react";
-
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 const carouselData = [
   {
     image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=800",
@@ -25,6 +26,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 const LoginPage: React.FC = () => {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -54,11 +59,35 @@ const LoginPage: React.FC = () => {
             <h1 className="text-[40px] font-bold text-[#0D0D0D] mb-4 tracking-tight leading-tight">Welcome Back!</h1>
             <p className="text-[#6B7280] text-[16px] font-medium mb-12">Please enter log in detals below</p>
 
-            <form className="space-y-[18px]" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-[18px]" onSubmit={async (e) => {
+              e.preventDefault();
+              setIsLoading(true);
+              try {
+                const res = await signIn("credentials", {
+                  redirect: false,
+                  email,
+                  password,
+                });
+                
+                if (res?.error) {
+                  toast.error("Invalid email or password");
+                } else {
+                  toast.success("Successfully logged in!");
+                  router.push("/dashboard");
+                }
+              } catch (error) {
+                toast.error("An error occurred during login");
+              } finally {
+                setIsLoading(false);
+              }
+            }}>
               {/* Email Input */}
               <div className="relative">
                 <input 
                   type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   placeholder="Email" 
                   className="w-full h-[64px] bg-white rounded-2xl px-5 text-sm font-medium text-gray-900 border-none outline-none ring-1 ring-transparent focus:ring-gray-200 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.03)] transition-all placeholder:text-gray-400"
                 />
@@ -68,6 +97,9 @@ const LoginPage: React.FC = () => {
               <div className="relative">
                 <input 
                   type={showPassword ? "text" : "password"} 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   placeholder="Password" 
                   className="w-full h-[64px] bg-white rounded-2xl pl-5 pr-14 text-sm font-medium text-gray-900 border-none outline-none ring-1 ring-transparent focus:ring-gray-200 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.03)] transition-all placeholder:text-gray-400"
                 />
@@ -91,9 +123,14 @@ const LoginPage: React.FC = () => {
               {/* Login Button */}
               <button 
                 type="submit"
-                className="w-full h-[60px] bg-[#FB611E] text-white rounded-2xl text-[15px] font-semibold shadow-xl shadow-black/5 hover:bg-black transition-all active:scale-[0.99] mt-2"
+                disabled={isLoading}
+                className="w-full h-[60px] bg-[#FB611E] text-white rounded-2xl text-[15px] font-semibold shadow-xl shadow-black/5 hover:bg-black transition-all active:scale-[0.99] mt-2 disabled:opacity-70 flex items-center justify-center"
               >
-                Sign in
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  "Sign in"
+                )}
               </button>
             </form>
 

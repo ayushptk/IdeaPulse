@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 import { Providers } from "./providers";
-
+import { Toaster } from "react-hot-toast";
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,6 +24,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-black text-white selection:bg-[#fb611e]/30 font-sans">
         <Providers>
           {children}
+          <Toaster position="top-right" />
         </Providers>
       </body>
     </html>

@@ -1,7 +1,9 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import { EyeOff, Eye } from 'lucide-react';
-
+import toast from "react-hot-toast";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 const carouselData = [
   {
     image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=800",
@@ -24,6 +26,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 const SignupPage: React.FC = () => {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -52,11 +59,45 @@ const SignupPage: React.FC = () => {
             <h1 className="text-[40px] font-bold text-[#0D0D0D] mb-4 tracking-tight leading-tight text-center">Create an Account</h1>
             <p className="text-[#6B7280] text-[16px] font-medium mb-12 text-center">Please enter your details below to sign up</p>
 
-            <form className="space-y-[18px]" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-[18px]" onSubmit={async (e) => {
+              e.preventDefault();
+              setIsLoading(true);
+              try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1"}/auth/register`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ name, email, password })
+                });
+
+                if (res.ok) {
+                  toast.success("Account created successfully!");
+                  const signInRes = await signIn("credentials", {
+                    redirect: false,
+                    email,
+                    password
+                  });
+                  if (!signInRes?.error) {
+                    router.push("/dashboard");
+                  } else {
+                    router.push("/login");
+                  }
+                } else {
+                  const data = await res.json();
+                  toast.error(data.detail || "Registration failed");
+                }
+              } catch (error) {
+                toast.error("An error occurred. Please try again.");
+              } finally {
+                setIsLoading(false);
+              }
+            }}>
               {/* Full Name Input */}
               <div className="relative">
                 <input 
                   type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
                   placeholder="Full Name" 
                   className="w-full h-[64px] bg-white rounded-2xl px-5 text-sm font-medium text-gray-900 border-none outline-none ring-1 ring-transparent focus:ring-gray-200 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.03)] transition-all placeholder:text-gray-400"
                 />
@@ -66,6 +107,9 @@ const SignupPage: React.FC = () => {
               <div className="relative">
                 <input 
                   type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   placeholder="Email" 
                   className="w-full h-[64px] bg-white rounded-2xl px-5 text-sm font-medium text-gray-900 border-none outline-none ring-1 ring-transparent focus:ring-gray-200 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.03)] transition-all placeholder:text-gray-400"
                 />
@@ -75,6 +119,9 @@ const SignupPage: React.FC = () => {
               <div className="relative">
                 <input 
                   type={showPassword ? "text" : "password"} 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   placeholder="Password" 
                   className="w-full h-[64px] bg-white rounded-2xl pl-5 pr-14 text-sm font-medium text-gray-900 border-none outline-none ring-1 ring-transparent focus:ring-gray-200 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.03)] transition-all placeholder:text-gray-400"
                 />
@@ -91,9 +138,14 @@ const SignupPage: React.FC = () => {
               {/* Signup Button */}
               <button 
                 type="submit"
-                className="w-full h-[60px] bg-[#FB611E] text-white rounded-2xl text-[15px] font-semibold shadow-xl shadow-black/5 hover:bg-black transition-all active:scale-[0.99] mt-6"
+                disabled={isLoading}
+                className="w-full h-[60px] bg-[#FB611E] text-white rounded-2xl text-[15px] font-semibold shadow-xl shadow-black/5 hover:bg-black transition-all active:scale-[0.99] mt-6 disabled:opacity-70 flex items-center justify-center"
               >
-                Sign up
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  "Sign up"
+                )}
               </button>
             </form>
 
@@ -107,6 +159,7 @@ const SignupPage: React.FC = () => {
             {/* Google Signup Button */}
             <button 
               type="button"
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               className="w-full h-[60px] bg-transparent border border-[#E5E7EB] rounded-2xl flex items-center justify-center gap-3 text-[14px] font-semibold text-[#0D0D0D] hover:bg-black/5 transition-all active:scale-[0.99]"
             >
               <FcGoogle size={24} />

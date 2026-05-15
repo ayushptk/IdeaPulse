@@ -138,7 +138,7 @@ export function Features() {
                   </div>
 
 
-8
+
 
                 {/* Bottom Row */}
                 <div className="flex gap-2 h-24">
