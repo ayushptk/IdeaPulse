@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from passlib.context import CryptContext
 
 from app.database.db import get_db
 from app.models.user import User
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -22,7 +22,7 @@ class AuthPayload(BaseModel):
 class RegisterPayload(BaseModel):
     name: str
     email: EmailStr
-    password: str
+    password: str = Field(..., max_length=128)
 
 class LoginPayload(BaseModel):
     email: EmailStr
