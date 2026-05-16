@@ -12,7 +12,9 @@ import {
   Eye,
   EyeOff,
   AlertTriangle,
+  Zap,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 /* ─── Types ────────────────────────────────────────────── */
 type Tab = "profile" | "notifications" | "appearance" | "account";
@@ -111,7 +113,7 @@ function SaveButton({
       onClick={onClick}
       className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-xl transition-all duration-300 ${
         saved
-          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25"
+          ? "bg-green-800 text-white-400 border border-green-500/25"
           : "bg-white text-black hover:bg-slate-100"
       }`}
     >
@@ -178,16 +180,46 @@ function ToggleRow({
 
 /* ─── Profile Tab ───────────────────────────────────────── */
 function ProfileTab() {
-  const [name, setName] = useState("Alex");
-  const [username, setUsername] = useState("alex_builder");
-  const [email, setEmail] = useState("alex@example.com");
+  const { data: session, update } = useSession();
+  const [name, setName] = useState(session?.user?.name || "Alex");
+  const [username, setUsername] = useState(session?.user?.name?.toLowerCase().replace(/\s+/g, '_') || "alex_builder");
+  const [email, setEmail] = useState(session?.user?.email || "alex@example.com");
   const [bio, setBio] = useState("");
-  const [avatarSeed, setAvatarSeed] = useState("Alex");
+  const [avatarSeed, setAvatarSeed] = useState(session?.user?.name || "Alex");
   const [saved, setSaved] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+
+  const handleSave = async () => {
+    setIsUpdating(true);
+    try {
+      const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`;
+      
+      const res = await fetch(`${API_URL}/auth/update`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: session?.user?.email,
+          name: name,
+          picture: avatarUrl,
+          bio: bio
+        })
+      });
+
+      if (res.ok) {
+        await update({
+          name: name,
+          picture: avatarUrl
+        });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -359,12 +391,15 @@ function NotificationsTab() {
   );
 }
 
-/* ─── Appearance Tab ────────────────────────────────────── */
-function AppearanceTab() {
+/* ─── Features Tab ─────────────────────────────────────── */
+function FeaturesTab() {
   const [density, setDensity] = useState<"compact" | "comfortable">("comfortable");
   const [defaultView, setDefaultView] = useState<"grid" | "list">("grid");
   const [showScores, setShowScores] = useState(true);
   const [animationsOn, setAnimationsOn] = useState(true);
+  const [aiSuggestions, setAiSuggestions] = useState(true);
+  const [autoSave, setAutoSave] = useState(true);
+  const [realtimeUpdates, setRealtimeUpdates] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
@@ -375,11 +410,37 @@ function AppearanceTab() {
   return (
     <div>
       <SectionHeading
-        title="Display"
-        sub="Adjust how IdeaForge looks and feels for you."
+        title="App Features"
+        sub="Customize how IdeaForge functions and looks for you."
       />
 
       <div className="space-y-6">
+        <div>
+          <Label>Functionality</Label>
+          <div className="bg-[#0d0d0f] border border-white/[0.06] rounded-2xl px-5 py-1">
+            <ToggleRow
+              label="AI-Powered Suggestions"
+              sub="Get intelligent problem-solution matching powered by GPT-4."
+              checked={aiSuggestions}
+              onChange={setAiSuggestions}
+            />
+            <ToggleRow
+              label="Auto-save Drafts"
+              sub="Automatically save your progress while writing ideas."
+              checked={autoSave}
+              onChange={setAutoSave}
+            />
+            <ToggleRow
+              label="Real-time Updates"
+              sub="Sync changes across devices instantly (Beta)."
+              checked={realtimeUpdates}
+              onChange={setRealtimeUpdates}
+            />
+          </div>
+        </div>
+
+        <Divider />
+
         {/* Density */}
         <div>
           <Label>Layout density</Label>
@@ -436,7 +497,7 @@ function AppearanceTab() {
 
       <Divider />
 
-      <SectionHeading title="Preferences" />
+      <SectionHeading title="Interface Preferences" />
 
       <div className="bg-[#0d0d0f] border border-white/[0.06] rounded-2xl px-5 py-1">
         <ToggleRow
@@ -637,12 +698,13 @@ function AccountTab() {
 const TABS: { id: Tab; label: string; icon: React.ElementType; sub: string }[] = [
   { id: "profile",       label: "Profile",       icon: User,    sub: "Name, avatar, bio"      },
   { id: "notifications", label: "Notifications", icon: Bell,    sub: "Email & alerts"         },
-  { id: "appearance",   label: "Appearance",    icon: Palette, sub: "Layout & display"       },
+  { id: "appearance",   label: "Features",      icon: Zap,     sub: "App functionality"      },
   { id: "account",      label: "Account",       icon: Shield,  sub: "Password & data"        },
 ];
 
 /* ─── Page ──────────────────────────────────────────────── */
 export default function SettingsPage() {
+  const { data: session } = useSession();
   const [active, setActive] = useState<Tab>("profile");
 
   const activeTab = TABS.find((t) => t.id === active)!;
@@ -651,7 +713,9 @@ export default function SettingsPage() {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       {/* Page heading */}
       <div className="mb-10">
-        <h1 className="text-2xl font-semibold text-white tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-semibold text-white tracking-tight">
+          {active === "profile" ? (session?.user?.name || "Profile Settings") : "Settings"}
+        </h1>
         <p className="text-sm text-slate-500 mt-1">Manage your account, preferences, and notifications.</p>
       </div>
 
@@ -697,7 +761,7 @@ export default function SettingsPage() {
           <div className="bg-[#111113] border border-white/[0.06] rounded-2xl p-7 lg:p-9">
             {active === "profile"       && <ProfileTab />}
             {active === "notifications" && <NotificationsTab />}
-            {active === "appearance"    && <AppearanceTab />}
+            {active === "appearance"    && <FeaturesTab />}
             {active === "account"       && <AccountTab />}
           </div>
         </div>

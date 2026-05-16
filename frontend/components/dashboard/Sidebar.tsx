@@ -11,6 +11,7 @@ import {
   LogOut,
   Sparkles
 } from 'lucide-react';
+import Image from 'next/image';
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -27,8 +28,8 @@ export function Sidebar() {
     <aside className="hidden md:flex w-72 bg-[#09090b] text-slate-400 flex-col h-screen fixed top-0 left-0 border-r border-white/10 z-20">
       <div className="h-20 flex items-center px-8 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)]">
-            <Sparkles className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 rounded-lg  flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)]">
+            <Image src="/logo.png" alt="Logo" width={32} height={32} className="rounded-lg" />
           </div>
           <span className="text-xl font-bold text-white tracking-tight">
             IdeaForge
