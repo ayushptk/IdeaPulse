@@ -63,38 +63,53 @@ function Skeleton() {
 export default function TrendingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [idea, setIdea] = useState<SavedIdea | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [idea, setIdea] = useState<SavedIdea | null>(() => {
+    if (typeof window !== "undefined") {
+      const cached = sessionStorage.getItem(`trending_${id}`);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== "undefined") {
+      const cached = sessionStorage.getItem(`trending_${id}`);
+      if (cached) return false;
+    }
+    return true;
+  });
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    // Try sessionStorage first (fast path)
-    const cached = sessionStorage.getItem(`trending_${id}`);
-    if (cached) {
-      setTimeout(() => {
-        setIdea(JSON.parse(cached));
-        setLoading(false);
-      }, 0);
-      return;
+    setTimeout(() => {
+      setMounted(true);
+    }, 0);
+    if (!idea) {
+      // Fallback — fetch all and find by id
+      fetch("http://localhost:8000/api/v1/ideas?limit=50")
+        .then((r) => r.json())
+        .then((data) => {
+          let all: SavedIdea[] = [];
+          data.forEach((p: { ideas: SavedIdea[] }) => { all = [...all, ...p.ideas]; });
+          const found = all.find(
+            (item) =>
+              item.id === id ||
+              encodeURIComponent(item.problem?.slice(0, 40)) === id
+          );
+          if (found) setIdea(found);
+        })
+        .catch(console.error)
+        .finally(() => setLoading(false));
     }
-    // Fallback — fetch all and find by id
-    fetch("http://localhost:8000/api/v1/ideas?limit=50")
-      .then((r) => r.json())
-      .then((data) => {
-        let all: SavedIdea[] = [];
-        data.forEach((p: { ideas: SavedIdea[] }) => { all = [...all, ...p.ideas]; });
-        const found = all.find(
-          (item) =>
-            item.id === id ||
-            encodeURIComponent(item.problem?.slice(0, 40)) === id
-        );
-        if (found) setIdea(found);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, idea]);
 
-  if (loading) return <Skeleton />;
+  if (!mounted || loading) return <Skeleton />;
 
   if (!idea) {
     return (

@@ -125,37 +125,51 @@ export default function IdeaDetailPage() {
   const params = useParams();
   const id = params?.id as string;
 
-  const [idea, setIdea] = useState<SavedIdea | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [idea, setIdea] = useState<SavedIdea | null>(() => {
+    if (typeof window !== "undefined") {
+      const cached = sessionStorage.getItem(`idea_${id}`);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  });
   const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== "undefined") {
+      const cached = sessionStorage.getItem(`idea_${id}`);
+      if (cached) return false;
+    }
+    return true;
+  });
 
   useEffect(() => {
-    // Try sessionStorage first (from explore page navigation)
-    const cached = sessionStorage.getItem(`idea_${id}`);
-    if (cached) {
-      setTimeout(() => {
-        setIdea(JSON.parse(cached));
-        setLoading(false);
-      }, 0);
-      return;
+    setTimeout(() => {
+      setMounted(true);
+    }, 0);
+    if (!idea) {
+      // Fall back to API
+      fetch("http://localhost:8000/api/v1/ideas?limit=50")
+        .then((r) => r.json())
+        .then((data) => {
+          let all: SavedIdea[] = [];
+          data.forEach((p: { ideas: SavedIdea[] }) => { all = [...all, ...p.ideas]; });
+          const found = all.find(
+            (item) =>
+              item.id === id ||
+              encodeURIComponent(item.problem?.slice(0, 40)) === id
+          );
+          setIdea(found || null);
+        })
+        .catch(console.error)
+        .finally(() => setLoading(false));
     }
-
-    // Fall back to API
-    fetch("http://localhost:8000/api/v1/ideas?limit=50")
-      .then((r) => r.json())
-      .then((data) => {
-        let all: SavedIdea[] = [];
-        data.forEach((p: { ideas: SavedIdea[] }) => { all = [...all, ...p.ideas]; });
-        const found = all.find(
-          (item) =>
-            item.id === id ||
-            encodeURIComponent(item.problem?.slice(0, 40)) === id
-        );
-        setIdea(found || null);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, idea]);
 
   const meta =
     PLATFORM_META[idea?.platform?.toLowerCase()] || {
@@ -169,7 +183,7 @@ export default function IdeaDetailPage() {
   const features: string[] =
     idea?.features || idea?.core_features || [];
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="max-w-3xl mx-auto space-y-8 animate-pulse pb-20">
         <div className="flex items-center gap-3">

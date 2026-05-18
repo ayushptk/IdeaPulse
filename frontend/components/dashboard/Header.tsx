@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Search, Bell, Menu, Check, Trash2, Clock, Info, Lightbulb, AlertCircle, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -200,8 +201,8 @@ export function Header() {
         <div className="w-px h-6 bg-white/10 hidden md:block"></div>
 
         <button className="flex items-center gap-3 hover:opacity-80 transition-opacity rounded-full p-1 pr-3 bg-white/5 border border-white/5">
-          <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-800">
-            <img src={avatarUrl} alt="User avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+          <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-800 relative">
+            <Image src={avatarUrl} alt="User avatar" fill sizes="32px" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
           <div className="text-left hidden md:block">
             <p className="text-sm font-medium text-white leading-tight">{firstName}</p>

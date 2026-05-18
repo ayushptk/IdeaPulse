@@ -184,10 +184,12 @@ const SignupPage: React.FC = () => {
           {/* Image */}
           <div className="relative w-full max-w-[650px] aspect-[4/3] mb-12 overflow-hidden rounded-[30px]">
             {carouselData.map((slide, index) => (
-              <img
+              <Image
                 key={index}
                 src={slide.image}
                 alt={slide.title}
+                fill
+                sizes="(max-width: 1024px) 100vw, 650px"
                 className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
                   index === currentSlide ? "opacity-100" : "opacity-0"
                 }`}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 const STORAGE_KEY = "ideaforge_saved_ideas";
 
@@ -28,24 +28,32 @@ const getIdeaKey = (idea: SavedIdea): string =>
   idea.id ? String(idea.id) : encodeURIComponent(idea.problem?.slice(0, 60) || "unknown");
 
 export function useSavedIdeas() {
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-  const [savedIdeas, setSavedIdeas] = useState<SavedIdea[]>([]);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed: SavedIdea[] = JSON.parse(raw);
-        setTimeout(() => {
-          setSavedIdeas(parsed);
-          setSavedIds(new Set(parsed.map((idea) => getIdeaKey(idea))));
-        }, 0);
+  const [savedIdeas, setSavedIdeas] = useState<SavedIdea[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore parse errors
     }
-  }, []);
+    return [];
+  });
+
+  const [savedIds, setSavedIds] = useState<Set<string>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed: SavedIdea[] = JSON.parse(raw);
+          return new Set(parsed.map((idea) => getIdeaKey(idea)));
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return new Set();
+  });
 
   const saveIdea = useCallback((idea: SavedIdea) => {
     setSavedIdeas((prev) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   User,
   Bell,
@@ -226,9 +227,11 @@ function ProfileTab() {
       {/* Avatar */}
       <div className="flex items-center gap-5 mb-7">
         <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-800 border border-white/10 flex-shrink-0">
-          <img
+          <Image
             src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`}
             alt="Avatar"
+            width={64}
+            height={64}
             className="w-full h-full object-cover"
           />
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Bookmark,
@@ -402,6 +402,13 @@ export default function SavedIdeasPage() {
   const [query, setQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedIdea, setSelectedIdea] = useState<SavedIdea | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setMounted(true);
+    }, 0);
+  }, []);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return savedIdeas;
@@ -438,6 +445,23 @@ export default function SavedIdeasPage() {
     });
     return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
   })();
+
+  if (!mounted) {
+    return (
+      <div className="space-y-8 animate-pulse pb-20">
+        <div className="flex items-center gap-2.5 mb-1">
+          <div className="w-8 h-8 rounded-lg bg-white/[0.08] flex items-center justify-center" />
+          <div className="h-7 bg-white/[0.08] rounded w-48" />
+        </div>
+        <div className="h-4 bg-white/[0.08] rounded w-96 mt-2" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-8">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-48 bg-white/[0.05] rounded-2xl border border-white/[0.06]" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
