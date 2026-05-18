@@ -112,7 +112,7 @@ async def get_platform_ideas(
     result = await db.execute(
         select(Idea)
         .where(Idea.platform == platform_db_name)
-        .order_by(desc(Idea.score), desc(Idea.created_at))
+        .order_by(desc(Idea.created_at), desc(Idea.score))
         .limit(limit)
     )
     ideas = result.scalars().all()
@@ -127,7 +127,7 @@ async def get_platform_ideas(
         result = await db.execute(
             select(Idea)
             .where(Idea.platform == platform_db_name)
-            .order_by(desc(Idea.score), desc(Idea.created_at))
+            .order_by(desc(Idea.created_at), desc(Idea.score))
             .limit(limit)
         )
         ideas = result.scalars().all()
@@ -158,7 +158,7 @@ async def get_all_ideas(
         result = await db.execute(
             select(Idea)
             .where(Idea.platform == platform_db_name)
-            .order_by(desc(Idea.score), desc(Idea.created_at))
+            .order_by(desc(Idea.created_at), desc(Idea.score))
             .limit(limit)
         )
         ideas = result.scalars().all()
@@ -194,7 +194,7 @@ async def get_daily_hn_ideas(
     result = await db.execute(
         select(Idea)
         .where(Idea.platform == "hn", Idea.created_at >= utc_today_start)
-        .order_by(desc(Idea.score), desc(Idea.created_at))
+        .order_by(desc(Idea.created_at), desc(Idea.score))
         .limit(5)
     )
     ideas = result.scalars().all()
@@ -204,7 +204,7 @@ async def get_daily_hn_ideas(
         fallback_result = await db.execute(
             select(Idea)
             .where(Idea.platform == "hn")
-            .order_by(desc(Idea.score), desc(Idea.created_at))
+            .order_by(desc(Idea.created_at), desc(Idea.score))
             .limit(5)
         )
         ideas = fallback_result.scalars().all()
