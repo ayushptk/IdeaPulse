@@ -44,7 +44,7 @@ function ScoreRing({ score }: { score: number }) {
 }
 
 function IdeaCardGrid({ idea, onClick, onBookmark, saved }: { idea: SavedIdea; onClick: () => void; onBookmark: (e: React.MouseEvent) => void; saved: boolean }) {
-  const meta = PLATFORM_META[idea.platform?.toLowerCase()] || { label: idea.platform, color: "text-slate-400", dot: "bg-slate-400" };
+  const meta = PLATFORM_META[idea.platform?.toLowerCase() || ""] || { label: idea.platform, color: "text-slate-400", dot: "bg-slate-400" };
 
   return (
     <div
@@ -58,7 +58,7 @@ function IdeaCardGrid({ idea, onClick, onBookmark, saved }: { idea: SavedIdea; o
             {meta.label}
           </span>
         </div>
-        <ScoreRing score={idea.score} />
+        <ScoreRing score={idea.score || 0} />
       </div>
 
       <p className="text-sm text-slate-200 leading-relaxed line-clamp-3 flex-1 group-hover:text-white transition-colors">
@@ -95,14 +95,14 @@ function IdeaCardGrid({ idea, onClick, onBookmark, saved }: { idea: SavedIdea; o
 
 
 function IdeaCardList({ idea, onClick, onBookmark, saved }: { idea: SavedIdea; onClick: () => void; onBookmark: (e: React.MouseEvent) => void; saved: boolean }) {
-  const meta = PLATFORM_META[idea.platform?.toLowerCase()] || { label: idea.platform, color: "text-slate-400", dot: "bg-slate-400" };
+  const meta = PLATFORM_META[idea.platform?.toLowerCase() || ""] || { label: idea.platform, color: "text-slate-400", dot: "bg-slate-400" };
 
   return (
     <div
       onClick={onClick}
       className="group flex items-start gap-5 px-5 py-4 border-b border-white/[0.06] cursor-pointer hover:bg-white/[0.02] transition-colors last:border-b-0"
     >
-      <ScoreRing score={idea.score} />
+      <ScoreRing score={idea.score || 0} />
 
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2">
@@ -215,9 +215,9 @@ export default function ExplorePage() {
       );
     }
 
-    if (sortBy === "score") result.sort((a, b) => b.score - a.score);
-    else if (sortBy === "newest") result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    else if (sortBy === "hottest") result.sort((a, b) => (b.upvotes || b.score) - (a.upvotes || a.score));
+    if (sortBy === "score") result.sort((a, b) => (b.score || 0) - (a.score || 0));
+    else if (sortBy === "newest") result.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    else if (sortBy === "hottest") result.sort((a, b) => (((b.upvotes as number) || b.score || 0)) - (((a.upvotes as number) || a.score || 0)));
 
     return result;
   }, [ideas, platform, query, sortBy]);
@@ -225,7 +225,7 @@ export default function ExplorePage() {
   const currentSort = SORT_OPTIONS.find((s) => s.id === sortBy)!;
 
   const handleIdeaClick = (idea: SavedIdea) => {
-    const id = idea.id || encodeURIComponent(idea.problem?.slice(0, 40));
+    const id = idea.id || encodeURIComponent(idea.problem?.slice(0, 40) || "");
     sessionStorage.setItem(`idea_${id}`, JSON.stringify(idea));
     router.push(`/dashboard/explore/${id}`);
   };

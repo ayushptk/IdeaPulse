@@ -99,14 +99,14 @@ export default function TrendingProblemsPage() {
           idea.idea?.toLowerCase().includes(q)
       );
     }
-    if (sortBy === "score")  result.sort((a, b) => b.score - a.score);
-    else if (sortBy === "newest") result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    else if (sortBy === "hot")    result.sort((a, b) => (b.upvotes || b.score) - (a.upvotes || a.score));
+    if (sortBy === "score")  result.sort((a, b) => (b.score || 0) - (a.score || 0));
+    else if (sortBy === "newest") result.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    else if (sortBy === "hot")    result.sort((a, b) => (((b.upvotes as number) || b.score || 0)) - (((a.upvotes as number) || a.score || 0)));
     return result;
   }, [ideas, platform, query, sortBy]);
 
   const handleClick = (idea: SavedIdea) => {
-    const id = idea.id || encodeURIComponent(idea.problem?.slice(0, 40));
+    const id = idea.id || encodeURIComponent(idea.problem?.slice(0, 40) || "");
     sessionStorage.setItem(`trending_${id}`, JSON.stringify(idea));
     router.push(`/dashboard/trending/${id}`);
   };
@@ -223,7 +223,7 @@ export default function TrendingProblemsPage() {
           </div>
         ) : (
           filtered.map((idea, idx) => {
-            const meta = PLATFORM_META[idea.platform?.toLowerCase()] || {
+            const meta = PLATFORM_META[idea.platform?.toLowerCase() || ""] || {
               label: idea.platform, color: "text-slate-400", bg: "bg-white/5 border-white/10", dot: "bg-slate-400"
             };
             return (
@@ -246,7 +246,7 @@ export default function TrendingProblemsPage() {
                     <span className={`text-[11px] font-semibold uppercase tracking-wide ${meta.color}`}>
                       {meta.label}
                     </span>
-                    <ScoreBadge score={idea.score} />
+                    <ScoreBadge score={idea.score || 0} />
                   </div>
 
                   <p className="text-sm text-slate-300 group-hover:text-white leading-relaxed line-clamp-2 transition-colors mb-2.5">

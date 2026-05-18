@@ -1,6 +1,5 @@
 import asyncio
 import asyncpg
-import os
 
 async def main():
     conn = await asyncpg.connect('postgresql://postgres:ayush123@localhost:5432/Productsearch')

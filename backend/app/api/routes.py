@@ -23,12 +23,13 @@ from app.schemas import (
     PlatformIdeasResponse,
 )
 
+from app.api.auth import router as auth_router
+
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
 router = APIRouter()
 
-from app.api.auth import router as auth_router
 router.include_router(auth_router)
 # ── Platform registry — maps URL slugs to pipeline functions ──
 PLATFORM_PIPELINES = {

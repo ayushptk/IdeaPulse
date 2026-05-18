@@ -162,7 +162,7 @@ export default function IdeaDetailPage() {
           const found = all.find(
             (item) =>
               item.id === id ||
-              encodeURIComponent(item.problem?.slice(0, 40)) === id
+              encodeURIComponent(item.problem?.slice(0, 40) || "") === id
           );
           setIdea(found || null);
         })
@@ -172,7 +172,7 @@ export default function IdeaDetailPage() {
   }, [id, idea]);
 
   const meta =
-    PLATFORM_META[idea?.platform?.toLowerCase()] || {
+    PLATFORM_META[idea?.platform?.toLowerCase() || ""] || {
       label: idea?.platform || "Unknown",
       color: "text-slate-400",
       bg: "bg-white/[0.05]",
@@ -181,7 +181,7 @@ export default function IdeaDetailPage() {
     };
 
   const features: string[] =
-    idea?.features || idea?.core_features || [];
+    (idea?.features || idea?.core_features || []) as string[];
 
   if (!mounted || loading) {
     return (
@@ -275,7 +275,7 @@ export default function IdeaDetailPage() {
 
       {/* Score bar */}
       <div className="bg-[#111113] border border-white/[0.06] rounded-2xl p-5 mb-6">
-        <ScoreMeter score={idea.score} />
+        <ScoreMeter score={idea.score || 0} />
       </div>
 
       {/* Divider */}
@@ -348,10 +348,10 @@ export default function IdeaDetailPage() {
         )}
 
         {/* Tags / keywords */}
-        {(idea.tags || idea.keywords || []).length > 0 && (
+        {(((idea.tags || idea.keywords || []) as string[]).length > 0) && (
           <Section icon={TrendingUp} label="Tags">
             <div className="flex flex-wrap gap-2">
-              {(idea.tags || idea.keywords || []).map((t: string, i: number) => (
+              {((idea.tags || idea.keywords || []) as string[]).map((t: string, i: number) => (
                 <Pill key={i} text={t} />
               ))}
             </div>
@@ -372,9 +372,9 @@ export default function IdeaDetailPage() {
                 : "Date unknown"}
             </span>
           </div>
-          {idea.url && (
+          {!!idea.url && (
             <a
-              href={idea.url}
+              href={idea.url as string}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors"

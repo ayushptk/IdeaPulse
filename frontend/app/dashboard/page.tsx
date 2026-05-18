@@ -91,7 +91,7 @@ export default function Dashboard() {
           allIdeas = [...allIdeas, ...platformData.ideas];
         });
         
-        allIdeas.sort((a, b) => b.score - a.score);
+        allIdeas.sort((a, b) => (b.score || 0) - (a.score || 0));
         setIdeas(allIdeas);
         setLoading(false);
       })
@@ -111,7 +111,7 @@ export default function Dashboard() {
   const filteredIdeas = activeCategory === 'All Ideas' 
     ? ideas 
     : ideas.filter(idea => {
-        const p = idea.platform.toLowerCase();
+        const p = idea.platform?.toLowerCase() || "";
         const c = activeCategory.toLowerCase();
         if (c === 'hackernews' && p === 'hn') return true;
         return p === c;
@@ -119,12 +119,12 @@ export default function Dashboard() {
 
   // Extract top trending problems from the highest scored ideas
   const trendingProblems = [...ideas]
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
     .slice(0, 4);
 
   // Extract latest ideas for live feed
   const newIdeas = [...ideas]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
     .slice(0, 4);
 
   return (
@@ -195,7 +195,7 @@ export default function Dashboard() {
                   
                   <div className="flex justify-between items-start mb-5 relative z-10">
                     <div className="flex gap-2 flex-wrap">
-                      <span className={`text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-md border ${PLATFORM_COLORS[idea.platform?.toLowerCase()] || 'bg-white/5 text-slate-300 border-white/5'}`}>
+                      <span className={`text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-md border ${PLATFORM_COLORS[idea.platform?.toLowerCase() || ""] || 'bg-white/5 text-slate-300 border-white/5'}`}>
                         {idea.platform}
                       </span>
                       {idea.features?.slice(0, 1).map((feature: string, i: number) => (
@@ -206,7 +206,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex flex-col items-end shrink-0 pl-4">
                       <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 leading-none">
-                        {Math.round(idea.score * 10)}
+                        {Math.round((idea.score || 0) * 10)}
                       </span>
                       <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">Score</span>
                     </div>
@@ -277,13 +277,13 @@ export default function Dashboard() {
               ) : trendingProblems.length > 0 ? (
                 trendingProblems.map((idea, i) => (
                   <div key={idea.id || i} onClick={() => {
-                    const id = idea.id || encodeURIComponent(idea.problem?.slice(0, 40));
+                    const id = idea.id || encodeURIComponent(idea.problem?.slice(0, 40) || "");
                     sessionStorage.setItem(`trending_${id}`, JSON.stringify(idea));
                     router.push(`/dashboard/trending/${id}`);
                   }} className={`flex items-start gap-4 p-5 hover:bg-white/5 transition-colors cursor-pointer group ${i !== trendingProblems.length - 1 ? 'border-b border-white/5' : ''}`}>
                     <div className="flex flex-col items-center justify-center bg-white/5 group-hover:bg-white/10 transition-colors rounded-xl w-14 h-14 shrink-0 border border-white/5">
                       <ChevronUp className="w-4 h-4 text-emerald-400 mb-0.5" />
-                      <span className="text-xs font-bold text-slate-300">{Math.round(idea.score * 10)}</span>
+                      <span className="text-xs font-bold text-slate-300">{Math.round((idea.score || 0) * 10)}</span>
                     </div>
                     <div className="flex-1 pt-0.5">
                       <h4 className="text-sm font-medium text-slate-300 group-hover:text-white leading-snug transition-colors line-clamp-2">{idea.problem}</h4>
@@ -322,7 +322,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <h4 className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors leading-relaxed line-clamp-2">
-                      {idea.idea.includes('AI-powered solution') ? idea.problem : idea.idea}
+                      {idea.idea?.includes('AI-powered solution') ? idea.problem : idea.idea}
                     </h4>
                   </div>
                 ))
@@ -347,11 +347,11 @@ export default function Dashboard() {
             
             <div className="p-8 space-y-6">
               <div className="flex gap-2 items-center mb-2">
-                <span className={`text-xs font-bold tracking-wider uppercase px-2.5 py-1 rounded-md border ${PLATFORM_COLORS[selectedIdea.platform?.toLowerCase()] || 'bg-white/5 text-slate-300 border-white/5'}`}>
+                <span className={`text-xs font-bold tracking-wider uppercase px-2.5 py-1 rounded-md border ${PLATFORM_COLORS[selectedIdea.platform?.toLowerCase() || ""] || 'bg-white/5 text-slate-300 border-white/5'}`}>
                   {selectedIdea.platform}
                 </span>
                 <span className="text-xs text-slate-400 bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
-                  Score: {Math.round(selectedIdea.score * 10)}
+                  Score: {Math.round((selectedIdea.score || 0) * 10)}
                 </span>
               </div>
               
@@ -382,7 +382,7 @@ export default function Dashboard() {
                 <div>
                   <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Core Features</h3>
                   <ul className="grid grid-cols-1 gap-2">
-                    {(selectedIdea.features || selectedIdea.core_features || []).map((feature: string, i: number) => (
+                    {((selectedIdea.features || selectedIdea.core_features || []) as string[]).map((feature: string, i: number) => (
                       <li key={i} className="flex items-start gap-2 bg-white/5 p-3 rounded-lg border border-white/5">
                         <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
                         <span className="text-sm text-slate-200">{feature}</span>

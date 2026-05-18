@@ -100,7 +100,7 @@ export default function TrendingDetailPage() {
           const found = all.find(
             (item) =>
               item.id === id ||
-              encodeURIComponent(item.problem?.slice(0, 40)) === id
+              encodeURIComponent(item.problem?.slice(0, 40) || "") === id
           );
           if (found) setIdea(found);
         })
@@ -126,12 +126,12 @@ export default function TrendingDetailPage() {
     );
   }
 
-  const meta = PLATFORM_META[idea.platform?.toLowerCase()] || {
+  const meta = PLATFORM_META[idea.platform?.toLowerCase() || ""] || {
     label: idea.platform, color: "text-slate-400", bg: "bg-white/5 border-white/10", dot: "bg-slate-400"
   };
-  const score = Math.min(Math.round(idea.score * 10), 99);
+  const score = Math.min(Math.round((idea.score || 0) * 10), 99);
   const scoreColor = score >= 80 ? "#34d399" : score >= 60 ? "#818cf8" : "#64748b";
-  const features: string[] = idea.features || idea.core_features || [];
+  const features: string[] = (idea.features || idea.core_features || []) as string[];
 
   return (
     <div className="max-w-3xl pb-20 animate-in fade-in duration-500">

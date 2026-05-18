@@ -89,7 +89,7 @@ function SavedCardGrid({
   onClick: () => void;
 }) {
   const meta =
-    PLATFORM_META[idea.platform?.toLowerCase()] || {
+    PLATFORM_META[idea.platform?.toLowerCase() || ""] || {
       label: idea.platform,
       color: "text-slate-400",
       dot: "bg-slate-400",
@@ -112,7 +112,7 @@ function SavedCardGrid({
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <ScoreRing score={idea.score} />
+          <ScoreRing score={idea.score || 0} />
           <button
             onClick={onUnsave}
             title="Remove from saved"
@@ -160,7 +160,7 @@ function SavedCardList({
   onClick: () => void;
 }) {
   const meta =
-    PLATFORM_META[idea.platform?.toLowerCase()] || {
+    PLATFORM_META[idea.platform?.toLowerCase() || ""] || {
       label: idea.platform,
       color: "text-slate-400",
       dot: "bg-slate-400",
@@ -171,7 +171,7 @@ function SavedCardList({
       onClick={onClick}
       className="group flex items-start gap-5 px-5 py-4 border-b border-white/[0.06] cursor-pointer hover:bg-white/[0.02] transition-colors last:border-b-0"
     >
-      <ScoreRing score={idea.score} />
+      <ScoreRing score={idea.score || 0} />
 
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ function DetailModal({
   onUnsave: () => void;
 }) {
   const meta =
-    PLATFORM_META[idea.platform?.toLowerCase()] || {
+    PLATFORM_META[idea.platform?.toLowerCase() || ""] || {
       label: idea.platform,
       badge: "text-slate-400 bg-white/5 border-white/10",
     };
@@ -269,7 +269,7 @@ function DetailModal({
               {meta.label}
             </span>
             <span className="text-xs text-slate-500 bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
-              Score: {Math.round(idea.score * 10)}
+              Score: {Math.round((idea.score || 0) * 10)}
             </span>
             {idea.savedAt && (
               <span className="text-xs text-slate-600 flex items-center gap-1 ml-1">
@@ -329,13 +329,13 @@ function DetailModal({
             )}
 
             {/* Core Features */}
-            {(idea.features || idea.core_features || []).length > 0 && (
+            {(((idea.features || idea.core_features || []) as string[]).length > 0) && (
               <div>
                 <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                   Core Features
                 </h3>
                 <ul className="grid grid-cols-1 gap-2">
-                  {(idea.features || idea.core_features || []).map(
+                  {((idea.features || idea.core_features || []) as string[]).map(
                     (feature: string, i: number) => (
                       <li
                         key={i}
