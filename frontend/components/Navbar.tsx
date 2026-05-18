@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { Lightbulb } from "lucide-react";
 import Image from "next/image";
 
 import { useSession, signOut } from "next-auth/react";

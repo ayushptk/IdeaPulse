@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Bookmark,
   BookmarkX,
@@ -11,11 +11,10 @@ import {
   X,
   Sparkles,
   Clock,
-  TrendingUp,
   ArrowUpRight,
   Trash2,
 } from "lucide-react";
-import { useSavedIdeas } from "@/hooks/useSavedIdeas";
+import { useSavedIdeas, SavedIdea } from "@/hooks/useSavedIdeas";
 
 const PLATFORM_META: Record<string, { label: string; color: string; dot: string; badge: string }> = {
   reddit: {
@@ -50,7 +49,7 @@ const PLATFORM_META: Record<string, { label: string; color: string; dot: string;
   },
 };
 
-function getIdKey(idea: any) {
+function getIdKey(idea: SavedIdea) {
   return idea.id
     ? String(idea.id)
     : encodeURIComponent(idea.problem?.slice(0, 60) || "unknown");
@@ -85,7 +84,7 @@ function SavedCardGrid({
   onUnsave,
   onClick,
 }: {
-  idea: any;
+  idea: SavedIdea;
   onUnsave: (e: React.MouseEvent) => void;
   onClick: () => void;
 }) {
@@ -156,7 +155,7 @@ function SavedCardList({
   onUnsave,
   onClick,
 }: {
-  idea: any;
+  idea: SavedIdea;
   onUnsave: (e: React.MouseEvent) => void;
   onClick: () => void;
 }) {
@@ -224,16 +223,16 @@ function EmptyState() {
       <div>
         <h3 className="text-lg font-semibold text-white mb-1.5">No saved ideas yet</h3>
         <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
-          Bookmark ideas from the Dashboard or Explore page and they'll appear here for easy access.
+          Bookmark ideas from the Dashboard or Explore page and they&apos;ll appear here for easy access.
         </p>
       </div>
-      <a
+      <Link
         href="/dashboard/explore"
         className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-indigo-500/20"
       >
         <Sparkles className="w-4 h-4" />
         Browse Ideas
-      </a>
+      </Link>
     </div>
   );
 }
@@ -244,7 +243,7 @@ function DetailModal({
   onClose,
   onUnsave,
 }: {
-  idea: any;
+  idea: SavedIdea;
   onClose: () => void;
   onUnsave: () => void;
 }) {
@@ -402,7 +401,7 @@ export default function SavedIdeasPage() {
   const { savedIdeas, unsaveIdea } = useSavedIdeas();
   const [query, setQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [selectedIdea, setSelectedIdea] = useState<any>(null);
+  const [selectedIdea, setSelectedIdea] = useState<SavedIdea | null>(null);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return savedIdeas;
@@ -415,19 +414,13 @@ export default function SavedIdeasPage() {
     );
   }, [savedIdeas, query]);
 
-  const handleUnsave = (idea: any, e?: React.MouseEvent) => {
+  const handleUnsave = (idea: SavedIdea, e?: React.MouseEvent) => {
     e?.stopPropagation();
     unsaveIdea(idea);
     if (selectedIdea && getIdKey(selectedIdea) === getIdKey(idea)) {
       setSelectedIdea(null);
     }
   };
-
-  function getIdKey(idea: any) {
-    return idea.id
-      ? String(idea.id)
-      : encodeURIComponent(idea.problem?.slice(0, 60) || "unknown");
-  }
 
   const avgScore =
     savedIdeas.length > 0
@@ -535,7 +528,7 @@ export default function SavedIdeasPage() {
             {filtered.length} idea{filtered.length !== 1 ? "s" : ""}{" "}
             {query && (
               <>
-                for "<span className="text-slate-400">{query}</span>"
+                for &ldquo;<span className="text-slate-400">{query}</span>&rdquo;
               </>
             )}
           </p>

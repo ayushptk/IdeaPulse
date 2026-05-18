@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, ComponentType } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { SavedIdea } from "@/hooks/useSavedIdeas";
 import {
   ArrowLeft,
   Bookmark,
@@ -91,7 +92,7 @@ function Section({
   children,
   accent = false,
 }: {
-  icon: any;
+  icon: ComponentType<{ className?: string }>;
   label: string;
   children: React.ReactNode;
   accent?: boolean;
@@ -124,7 +125,7 @@ export default function IdeaDetailPage() {
   const params = useParams();
   const id = params?.id as string;
 
-  const [idea, setIdea] = useState<any>(null);
+  const [idea, setIdea] = useState<SavedIdea | null>(null);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -132,8 +133,10 @@ export default function IdeaDetailPage() {
     // Try sessionStorage first (from explore page navigation)
     const cached = sessionStorage.getItem(`idea_${id}`);
     if (cached) {
-      setIdea(JSON.parse(cached));
-      setLoading(false);
+      setTimeout(() => {
+        setIdea(JSON.parse(cached));
+        setLoading(false);
+      }, 0);
       return;
     }
 
@@ -141,8 +144,8 @@ export default function IdeaDetailPage() {
     fetch("http://localhost:8000/api/v1/ideas?limit=50")
       .then((r) => r.json())
       .then((data) => {
-        let all: any[] = [];
-        data.forEach((p: any) => { all = [...all, ...p.ideas]; });
+        let all: SavedIdea[] = [];
+        data.forEach((p: { ideas: SavedIdea[] }) => { all = [...all, ...p.ideas]; });
         const found = all.find(
           (item) =>
             item.id === id ||

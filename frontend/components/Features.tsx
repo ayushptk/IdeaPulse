@@ -2,12 +2,11 @@
 import { motion } from "framer-motion";
 import { 
   Signal, Wifi, Battery, ChevronLeft, Share, MoreHorizontal, 
-  SlidersHorizontal, LayoutGrid, Link2, Table, Check, MessageSquare
+  SlidersHorizontal, LayoutGrid, Link2, Table, Check
 } from "lucide-react";
 import { FaRedditAlien } from "react-icons/fa6";
 import { FaProductHunt } from "react-icons/fa6";
 import { FaLinkedin } from "react-icons/fa";
-import { FaHackerNews } from "react-icons/fa";
 
 
 interface FloatingCardProps {

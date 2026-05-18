@@ -75,7 +75,7 @@ const LoginPage: React.FC = () => {
                   toast.success("Successfully logged in!");
                   router.push("/dashboard");
                 }
-              } catch (error) {
+              } catch {
                 toast.error("An error occurred during login");
               } finally {
                 setIsLoading(false);
@@ -156,7 +156,7 @@ const LoginPage: React.FC = () => {
         {/* Footer Area */}
         <div className="mt-auto text-center pt-10">
           <p className="text-[14px] text-[#6B7280] font-medium">
-            Don't have an account? <Link href="/signup" className="text-[#FB611E] font-bold hover:underline">Sign Up</Link>
+            Don&apos;t have an account? <Link href="/signup" className="text-[#FB611E] font-bold hover:underline">Sign Up</Link>
           </p>
         </div>
       </div>
@@ -172,6 +172,7 @@ const LoginPage: React.FC = () => {
               <img
                 key={index}
                 src={slide.image}
+                alt={slide.title}
                 className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
                   index === currentSlide ? "opacity-100" : "opacity-0"
                 }`}

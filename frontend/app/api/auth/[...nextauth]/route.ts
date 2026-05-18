@@ -44,7 +44,7 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (account?.provider === "google") {
         try {
           const res = await fetch(`${API_URL}/auth/verify`, {
@@ -76,7 +76,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
-        token.picture = (user as any).picture || user.image;
+        token.picture = (user as { picture?: string; image?: string }).picture || user.image;
       }
       
       if (trigger === "update" && session) {
@@ -88,7 +88,7 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id as string;
+        (session.user as { id?: string; name?: string | null; email?: string | null; image?: string | null }).id = token.id as string;
         session.user.name = token.name as string;
         session.user.email = token.email as string;
         session.user.image = token.picture as string;

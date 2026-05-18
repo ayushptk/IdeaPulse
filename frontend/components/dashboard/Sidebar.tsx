@@ -8,8 +8,7 @@ import {
   TrendingUp,
   Bookmark,
   Settings, 
-  LogOut,
-  Sparkles
+  LogOut
 } from 'lucide-react';
 import Image from 'next/image';
 

@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   User,
   Bell,
-  Palette,
   Shield,
   Check,
   ChevronRight,
@@ -187,12 +186,9 @@ function ProfileTab() {
   const [bio, setBio] = useState("");
   const [avatarSeed, setAvatarSeed] = useState(session?.user?.name || "Alex");
   const [saved, setSaved] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 
   const handleSave = async () => {
-    setIsUpdating(true);
     try {
       const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`;
       
@@ -217,8 +213,6 @@ function ProfileTab() {
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-    } finally {
-      setIsUpdating(false);
     }
   };
 
@@ -611,7 +605,7 @@ function AccountTab() {
             }`}
           />
           {pwMismatch && (
-            <p className="text-xs text-red-400 mt-1.5">Passwords don't match.</p>
+            <p className="text-xs text-red-400 mt-1.5">Passwords don&apos;t match.</p>
           )}
           {pwMatch && (
             <p className="text-xs text-emerald-400 mt-1.5">Passwords match.</p>
@@ -707,7 +701,7 @@ export default function SettingsPage() {
   const { data: session } = useSession();
   const [active, setActive] = useState<Tab>("profile");
 
-  const activeTab = TABS.find((t) => t.id === active)!;
+
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">

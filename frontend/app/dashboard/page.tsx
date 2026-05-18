@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Sparkles, TrendingUp, Clock, Bookmark, ChevronUp, Share2, Compass, Activity, X } from 'lucide-react';
-import { useSavedIdeas } from '@/hooks/useSavedIdeas';
+import { useSavedIdeas, SavedIdea } from '@/hooks/useSavedIdeas';
 
 const categories = ['All Ideas', 'Reddit', 'ProductHunt', 'HackerNews', 'LinkedIn', 'IndieHackers'];
 
@@ -75,10 +75,10 @@ const formatTimeAgo = (dateStr: string) => {
 
 export default function Dashboard() {
   const router = useRouter();
-  const [ideas, setIdeas] = useState<any[]>([]);
+  const [ideas, setIdeas] = useState<SavedIdea[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All Ideas');
-  const [selectedIdea, setSelectedIdea] = useState<any>(null);
+  const [selectedIdea, setSelectedIdea] = useState<SavedIdea | null>(null);
   const { toggleSave, isSaved } = useSavedIdeas();
 
   const fetchIdeas = () => {
@@ -86,8 +86,8 @@ export default function Dashboard() {
     fetch('http://localhost:8000/api/v1/ideas?limit=10')
       .then(res => res.json())
       .then(data => {
-        let allIdeas: any[] = [];
-        data.forEach((platformData: any) => {
+        let allIdeas: SavedIdea[] = [];
+        data.forEach((platformData: { ideas: SavedIdea[] }) => {
           allIdeas = [...allIdeas, ...platformData.ideas];
         });
         
@@ -102,7 +102,9 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchIdeas();
+    setTimeout(() => {
+      fetchIdeas();
+    }, 0);
   }, []);
 
   // Filter ideas based on active category

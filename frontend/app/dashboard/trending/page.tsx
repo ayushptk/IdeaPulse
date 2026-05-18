@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   TrendingUp,
-  ArrowUpRight,
   Flame,
   Clock,
   Filter,
@@ -12,6 +11,7 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
+import { SavedIdea } from "@/hooks/useSavedIdeas";
 
 const PLATFORM_META: Record<string, { label: string; color: string; bg: string; dot: string }> = {
   reddit:       { label: "Reddit",       color: "text-orange-400", bg: "bg-orange-400/8 border-orange-400/20",  dot: "bg-orange-400" },
@@ -62,7 +62,7 @@ function Skeleton() {
 
 export default function TrendingProblemsPage() {
   const router = useRouter();
-  const [ideas, setIdeas] = useState<any[]>([]);
+  const [ideas, setIdeas] = useState<SavedIdea[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState("All");
@@ -73,8 +73,8 @@ export default function TrendingProblemsPage() {
     fetch("http://localhost:8000/api/v1/ideas?limit=30")
       .then((r) => r.json())
       .then((data) => {
-        let all: any[] = [];
-        data.forEach((p: any) => { all = [...all, ...p.ideas]; });
+        let all: SavedIdea[] = [];
+        data.forEach((p: { ideas: SavedIdea[] }) => { all = [...all, ...p.ideas]; });
         setIdeas(all);
       })
       .catch(console.error)
@@ -105,7 +105,7 @@ export default function TrendingProblemsPage() {
     return result;
   }, [ideas, platform, query, sortBy]);
 
-  const handleClick = (idea: any) => {
+  const handleClick = (idea: SavedIdea) => {
     const id = idea.id || encodeURIComponent(idea.problem?.slice(0, 40));
     sessionStorage.setItem(`trending_${id}`, JSON.stringify(idea));
     router.push(`/dashboard/trending/${id}`);

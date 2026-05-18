@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
-  SlidersHorizontal,
   LayoutGrid,
   List,
   ArrowUpRight,
@@ -15,7 +14,7 @@ import {
   ChevronDown,
   X,
 } from "lucide-react";
-import { useSavedIdeas } from "@/hooks/useSavedIdeas";
+import { useSavedIdeas, SavedIdea } from "@/hooks/useSavedIdeas";
 
 const PLATFORM_META: Record<string, { label: string; color: string; dot: string }> = {
   reddit: { label: "Reddit", color: "text-orange-400", dot: "bg-orange-400" },
@@ -44,9 +43,8 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-function IdeaCardGrid({ idea, onClick, onBookmark, saved }: { idea: any; onClick: () => void; onBookmark: (e: React.MouseEvent) => void; saved: boolean }) {
+function IdeaCardGrid({ idea, onClick, onBookmark, saved }: { idea: SavedIdea; onClick: () => void; onBookmark: (e: React.MouseEvent) => void; saved: boolean }) {
   const meta = PLATFORM_META[idea.platform?.toLowerCase()] || { label: idea.platform, color: "text-slate-400", dot: "bg-slate-400" };
-  const pct = Math.round(idea.score * 10);
 
   return (
     <div
@@ -96,7 +94,7 @@ function IdeaCardGrid({ idea, onClick, onBookmark, saved }: { idea: any; onClick
 
 
 
-function IdeaCardList({ idea, onClick, onBookmark, saved }: { idea: any; onClick: () => void; onBookmark: (e: React.MouseEvent) => void; saved: boolean }) {
+function IdeaCardList({ idea, onClick, onBookmark, saved }: { idea: SavedIdea; onClick: () => void; onBookmark: (e: React.MouseEvent) => void; saved: boolean }) {
   const meta = PLATFORM_META[idea.platform?.toLowerCase()] || { label: idea.platform, color: "text-slate-400", dot: "bg-slate-400" };
 
   return (
@@ -174,22 +172,21 @@ function SkeletonList() {
 
 export default function ExplorePage() {
   const router = useRouter();
-  const [ideas, setIdeas] = useState<any[]>([]);
+  const [ideas, setIdeas] = useState<SavedIdea[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState("All");
   const [sortBy, setSortBy] = useState("score");
   const [showSort, setShowSort] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const { toggleSave, isSaved } = useSavedIdeas();
 
   useEffect(() => {
     fetch("http://localhost:8000/api/v1/ideas?limit=20")
       .then((r) => r.json())
       .then((data) => {
-        let all: any[] = [];
-        data.forEach((p: any) => { all = [...all, ...p.ideas]; });
+        let all: SavedIdea[] = [];
+        data.forEach((p: { ideas: SavedIdea[] }) => { all = [...all, ...p.ideas]; });
         setIdeas(all);
       })
       .catch(console.error)
@@ -227,7 +224,7 @@ export default function ExplorePage() {
 
   const currentSort = SORT_OPTIONS.find((s) => s.id === sortBy)!;
 
-  const handleIdeaClick = (idea: any) => {
+  const handleIdeaClick = (idea: SavedIdea) => {
     const id = idea.id || encodeURIComponent(idea.problem?.slice(0, 40));
     sessionStorage.setItem(`idea_${id}`, JSON.stringify(idea));
     router.push(`/dashboard/explore/${id}`);
@@ -326,7 +323,7 @@ export default function ExplorePage() {
       {!loading && (
         <p className="text-xs text-slate-600">
           {filtered.length} idea{filtered.length !== 1 ? "s" : ""} found
-          {query && <> for "<span className="text-slate-400">{query}</span>"</>}
+          {query && <> for &ldquo;<span className="text-slate-400">{query}</span>&rdquo;</>}
         </p>
       )}
 

@@ -85,7 +85,7 @@ const SignupPage: React.FC = () => {
                   const data = await res.json();
                   toast.error(data.detail || "Registration failed");
                 }
-              } catch (error) {
+              } catch {
                 toast.error("An error occurred. Please try again.");
               } finally {
                 setIsLoading(false);
@@ -187,6 +187,7 @@ const SignupPage: React.FC = () => {
               <img
                 key={index}
                 src={slide.image}
+                alt={slide.title}
                 className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
                   index === currentSlide ? "opacity-100" : "opacity-0"
                 }`}

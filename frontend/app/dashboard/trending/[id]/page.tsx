@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, ComponentType } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { SavedIdea } from "@/hooks/useSavedIdeas";
 import {
   ArrowLeft,
   TrendingUp,
@@ -24,7 +25,7 @@ const PLATFORM_META: Record<string, { label: string; color: string; bg: string; 
   indiehackers: { label: "IndieHackers", color: "text-violet-400", bg: "bg-violet-400/10 border-violet-400/20",dot: "bg-violet-400" },
 };
 
-function Section({ icon: Icon, label, children }: { icon: any; label: string; children: React.ReactNode }) {
+function Section({ icon: Icon, label, children }: { icon: ComponentType<{ className?: string }>; label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2.5">
@@ -62,7 +63,7 @@ function Skeleton() {
 export default function TrendingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [idea, setIdea] = useState<any>(null);
+  const [idea, setIdea] = useState<SavedIdea | null>(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
 
@@ -70,16 +71,18 @@ export default function TrendingDetailPage() {
     // Try sessionStorage first (fast path)
     const cached = sessionStorage.getItem(`trending_${id}`);
     if (cached) {
-      setIdea(JSON.parse(cached));
-      setLoading(false);
+      setTimeout(() => {
+        setIdea(JSON.parse(cached));
+        setLoading(false);
+      }, 0);
       return;
     }
     // Fallback — fetch all and find by id
     fetch("http://localhost:8000/api/v1/ideas?limit=50")
       .then((r) => r.json())
       .then((data) => {
-        let all: any[] = [];
-        data.forEach((p: any) => { all = [...all, ...p.ideas]; });
+        let all: SavedIdea[] = [];
+        data.forEach((p: { ideas: SavedIdea[] }) => { all = [...all, ...p.ideas]; });
         const found = all.find(
           (item) =>
             item.id === id ||

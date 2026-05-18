@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Menu, Check, Trash2, Clock, Info, Lightbulb, AlertCircle, X } from 'lucide-react';
-import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
