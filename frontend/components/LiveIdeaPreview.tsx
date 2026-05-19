@@ -34,7 +34,7 @@ export function LiveIdeaPreview() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">Sneak peek at our database</h2>
-          <p className="text-neutral-400 text-lg">Real ideas pulled from today's data.</p>
+          <p className="text-neutral-400 text-lg">Real ideas pulled from today&apos;s data.</p>
         </div>
 
         <motion.div 

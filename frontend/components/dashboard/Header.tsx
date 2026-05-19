@@ -23,7 +23,7 @@ export function Header() {
   
   const firstNameRaw = session?.user?.name?.split(' ')[0] || 'User';
   const firstName = firstNameRaw.charAt(0).toUpperCase() + firstNameRaw.slice(1);
-  let avatarUrl = session?.user?.image || '';
+  const avatarUrl = session?.user?.image || '';
   
   // Determine if we should show a letter avatar (always for email/password logins)
   const isGoogleAvatar = avatarUrl.includes('googleusercontent.com');
