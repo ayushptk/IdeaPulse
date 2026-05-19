@@ -101,6 +101,17 @@ export default function Dashboard() {
       });
   };
 
+  const handleLiveSync = async () => {
+    setLoading(true);
+    try {
+      await fetch('http://localhost:8000/api/v1/pipelines/run-all', { method: 'POST' });
+      fetchIdeas();
+    } catch (err) {
+      console.error("Failed to sync new ideas:", err);
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     setTimeout(() => {
       fetchIdeas();
@@ -136,11 +147,11 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-3">
           <button 
-            onClick={fetchIdeas}
+            onClick={handleLiveSync}
             className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-lg transition-colors border border-white/10 group"
           >
             <Activity className={`w-4 h-4 text-indigo-400 transition-colors ${loading ? 'animate-spin' : 'group-hover:text-indigo-300'}`} />
-            {loading ? 'Syncing...' : 'Live Sync'}
+            {loading ? 'Scraping New Ideas...' : 'Live Sync'}
           </button>
           <button className="flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors shadow-lg shadow-indigo-500/20">
             <Compass className="w-4 h-4" />

@@ -33,6 +33,7 @@ export const authOptions: NextAuthOptions = {
               id: data.user.id.toString(),
               email: data.user.email,
               name: data.user.name,
+              image: data.user.picture,
             };
           }
           return null;

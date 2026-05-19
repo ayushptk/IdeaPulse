@@ -21,8 +21,13 @@ export function Header() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  const firstName = session?.user?.name?.split(' ')[0] || 'User';
-  const avatarUrl = session?.user?.image || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex';
+  const firstNameRaw = session?.user?.name?.split(' ')[0] || 'User';
+  const firstName = firstNameRaw.charAt(0).toUpperCase() + firstNameRaw.slice(1);
+  let avatarUrl = session?.user?.image || '';
+  
+  // Determine if we should show a letter avatar (always for email/password logins)
+  const isGoogleAvatar = avatarUrl.includes('googleusercontent.com');
+  const showLetterAvatar = !isGoogleAvatar || !avatarUrl;
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -201,9 +206,15 @@ export function Header() {
         <div className="w-px h-6 bg-white/10 hidden md:block"></div>
 
         <button className="flex items-center gap-3 hover:opacity-80 transition-opacity rounded-full p-1 pr-3 bg-white/5 border border-white/5">
-          <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-800 relative">
-            <Image src={avatarUrl} alt="User avatar" fill sizes="32px" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-          </div>
+          {showLetterAvatar ? (
+            <div className="h-8 w-8 rounded-full overflow-hidden bg-indigo-500 flex items-center justify-center shadow-[0_0_10px_rgba(99,102,241,0.4)]">
+              <span className="text-sm font-bold text-white">{firstName.charAt(0)}</span>
+            </div>
+          ) : (
+            <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-800 relative shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+              <Image src={avatarUrl} alt="User avatar" fill sizes="32px" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            </div>
+          )}
           <div className="text-left hidden md:block">
             <p className="text-sm font-medium text-white leading-tight">{firstName}</p>
           </div>

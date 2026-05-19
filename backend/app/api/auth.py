@@ -66,7 +66,7 @@ async def register_user(payload: RegisterPayload, db: AsyncSession = Depends(get
     
     hashed_password = pwd_context.hash(payload.password)
     
-    avatar_url = f"https://avatar.iran.liara.run/public?username={payload.name.replace(' ', '+')}"
+    avatar_url = f"https://api.dicebear.com/7.x/micah/svg?seed={payload.name.replace(' ', '+')}"
     if payload.name:
         first_name = payload.name.split()[0]
         try:
@@ -76,9 +76,9 @@ async def register_user(payload: RegisterPayload, db: AsyncSession = Depends(get
                     data = response.json()
                     gender = data.get("gender")
                     if gender == "male":
-                        avatar_url = f"https://avatar.iran.liara.run/public/boy?username={payload.name.replace(' ', '+')}"
+                        avatar_url = f"https://api.dicebear.com/7.x/micah/svg?seed={payload.name.replace(' ', '+')}"
                     elif gender == "female":
-                        avatar_url = f"https://avatar.iran.liara.run/public/girl?username={payload.name.replace(' ', '+')}"
+                        avatar_url = f"https://api.dicebear.com/7.x/lorelei/svg?seed={payload.name.replace(' ', '+')}"
         except Exception:
             pass
             
