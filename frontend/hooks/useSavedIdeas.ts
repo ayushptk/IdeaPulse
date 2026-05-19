@@ -11,6 +11,7 @@ export interface SavedIdea {
   users?: string;
   idea?: string;
   features?: string[];
+  core_features?: string[];
   monetization?: string;
   score?: number;
   created_at?: string;

@@ -78,13 +78,15 @@ export function LiveIdeaPreview() {
                       <p className="text-neutral-400 mb-6">{idea.solution}</p>
                     )}
                     
-                    {(idea.features || idea.core_features) && (
+                    {Array.isArray(idea.features || idea.core_features) && (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                        {((idea.features || idea.core_features || []) as string[]).slice(0, 4).map((f, i) => (
-                          <div key={i} className="glass p-3 rounded-xl flex items-center justify-center text-center">
-                            <div className="text-xs text-neutral-300 font-medium line-clamp-2">{f}</div>
-                          </div>
-                        ))}
+                        {(idea.features || idea.core_features || [])
+                          .slice(0, 4)
+                          .map((feature: string, i: number) => (
+                            <div key={i} className="glass p-3 rounded-xl flex items-center justify-center text-center">
+                              <div className="text-xs text-neutral-300 font-medium line-clamp-2">{feature}</div>
+                            </div>
+                          ))}
                       </div>
                     )}
                   </div>
