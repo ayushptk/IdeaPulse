@@ -92,12 +92,57 @@ ProductSearch is an AI-powered SaaS idea discovery platform. It automatically sc
 
 ---
 
+## 🎯 Keyword Filtering Strategy
+
+To ensure we extract genuine user pain points and high-value SaaS opportunities, ProductSearch utilizes targeted keyword filtering during the data ingestion phase. By looking for specific complaint-oriented phrases across social platforms, we filter out the noise and focus directly on what users actually need.
+
+**High-Signal Keywords & Phrases Used for Filtering:**
+
+* **Frustration & Pain Points:**
+  - `"frustrating"` / `"so frustrated"`
+  - `"i hate"` / `"anyone else hate"`
+  - `"this sucks"`
+  - `"so annoying"` / `"drives me crazy"`
+  - `"pulling my hair out"`
+  - `"pain point"`
+  - `"biggest problem"`
+
+* **Inefficiency & Manual Work:**
+  - `"manual process"`
+  - `"wasted hours"` / `"spent hours manually"`
+  - `"there has to be a better way"`
+
+* **Missing Tools & Software Gaps:**
+  - `"no tools"` / `"no ai tools"` / `"no software"`
+  - `"why is there no"`
+  - `"can't find a good"` / `"cant find a good"`
+  - `"no good solution"`
+  - `"dying for a solution"`
+
+* **Search & Discovery Queries:**
+  - `"anyone know a tool"`
+  - `"is there an app"` / `"is there an app for"` / `"is there a tool"`
+  - `"looking for a tool"`
+
+* **Feature & Solution Requests:**
+  - `"i wish"`
+  - `"there should be an app"`
+  - `"i'm struggling with"` / `"im struggling with"`
+  - `"need something that"`
+  - `"would pay for"`
+  - `"wish someone would build"` / `"someone should build"`
+  - `"how do you handle"`
+
+
+This approach helps uncover highly validated ideas backed by real user struggles before they are even synthesized by our AI models.
+
 ## 🏗️ Architecture & Pipelines
 
 1. **Data Ingestion**: Specific crawlers hit platform APIs (Reddit, HN, etc.) to fetch trending data.
-2. **Normalization & Clustering**: Data is cleaned into a standard schema and clustered using TF-IDF / K-Means (via Scikit-learn) to identify overarching "pain points".
-3. **AI Generation**: Clustered data is fed into a highly-tuned Gemini prompt to extract a single cohesive SaaS solution.
-4. **Storage & Search**: Stored in PostgreSQL with `JSONB` for features and `tsvector` columns for ultra-fast full-text querying.
+2. **Keyword Filtering**: Signals are filtered using pain-point keywords (like "frustrating", "no tools") to isolate strong product opportunities.
+3. **Normalization & Clustering**: Data is cleaned into a standard schema and clustered using TF-IDF / K-Means (via Scikit-learn) to identify overarching "pain points".
+4. **AI Generation**: Clustered data is fed into a highly-tuned Gemini prompt to extract a single cohesive SaaS solution.
+5. **Storage & Search**: Stored in PostgreSQL with `JSONB` for features and `tsvector` columns for ultra-fast full-text querying.
 
 ## 🤝 Contributing
 
