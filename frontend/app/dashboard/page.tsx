@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Sparkles, TrendingUp, Clock, Bookmark, ChevronUp, Share2, Compass, Activity, X } from 'lucide-react';
 import { useSavedIdeas, SavedIdea } from '@/hooks/useSavedIdeas';
 
+const _apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE = _apiUrl.replace(/\/api\/v1\/?$/, '');
 const categories = ['All Ideas', 'Reddit', 'ProductHunt', 'HackerNews', 'LinkedIn', 'IndieHackers'];
+
+
 
 // Skeleton for Idea Card
 const IdeaSkeleton = () => (
@@ -76,47 +80,59 @@ const formatTimeAgo = (dateStr: string) => {
 export default function Dashboard() {
   const router = useRouter();
   const [ideas, setIdeas] = useState<SavedIdea[]>([]);
+  const [latestIdeas, setLatestIdeas] = useState<SavedIdea[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All Ideas');
   const [selectedIdea, setSelectedIdea] = useState<SavedIdea | null>(null);
   const { toggleSave, isSaved } = useSavedIdeas();
 
-  const fetchIdeas = () => {
+  const isNew = (dateStr: string | undefined) => {
+    if (!dateStr) return false;
+    return (Date.now() - new Date(dateStr).getTime()) < 86_400_000; // < 24h
+  };
+
+  const fetchIdeas = useCallback(() => {
     setLoading(true);
-    fetch('http://localhost:8000/api/v1/ideas?limit=10')
-      .then(res => res.json())
-      .then(data => {
+    Promise.all([
+      fetch(`${API_BASE}/api/v1/ideas?limit=10`).then(r => r.json()),
+      fetch(`${API_BASE}/api/v1/ideas/latest?limit=5`).then(r => r.json()),
+    ])
+      .then(([allData, latestData]) => {
         let allIdeas: SavedIdea[] = [];
-        data.forEach((platformData: { ideas: SavedIdea[] }) => {
-          allIdeas = [...allIdeas, ...platformData.ideas];
+        allData.forEach((platformData: { ideas: SavedIdea[] }) => {
+          const newIdeas = platformData.ideas.filter(idea => isNew(idea.created_at));
+          if (newIdeas.length > 0) {
+            newIdeas.sort((a, b) => (b.score || 0) - (a.score || 0));
+            allIdeas.push(newIdeas[0]);
+          } else if (platformData.ideas.length > 0) {
+            const sortedIdeas = [...platformData.ideas].sort((a, b) => (b.score || 0) - (a.score || 0));
+            allIdeas.push(sortedIdeas[0]);
+          }
         });
-        
         allIdeas.sort((a, b) => (b.score || 0) - (a.score || 0));
         setIdeas(allIdeas);
+        setLatestIdeas(Array.isArray(latestData) ? latestData : []);
         setLoading(false);
       })
-      .catch(err => {
-        console.error("Failed to fetch ideas:", err);
+      .catch(() => {
         setLoading(false);
       });
-  };
+  }, []);
 
   const handleLiveSync = async () => {
     setLoading(true);
     try {
-      await fetch('http://localhost:8000/api/v1/pipelines/run-all', { method: 'POST' });
+      await fetch(`${API_BASE}/api/v1/pipelines/run-all`, { method: 'POST' });
       fetchIdeas();
-    } catch (err) {
-      console.error("Failed to sync new ideas:", err);
+    } catch {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    setTimeout(() => {
-      fetchIdeas();
-    }, 0);
-  }, []);
+    fetchIdeas();
+  }, [fetchIdeas]);
+
 
   // Filter ideas based on active category
   const filteredIdeas = activeCategory === 'All Ideas' 
@@ -133,10 +149,9 @@ export default function Dashboard() {
     .sort((a, b) => (b.score || 0) - (a.score || 0))
     .slice(0, 4);
 
-  // Extract latest ideas for live feed
-  const newIdeas = [...ideas]
-    .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
-    .slice(0, 4);
+  // Use latest-endpoint data for Live Feed (most recent 4)
+  const newIdeas = latestIdeas.slice(0, 4);
+
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
@@ -209,6 +224,11 @@ export default function Dashboard() {
                       <span className={`text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-md border ${PLATFORM_COLORS[idea.platform?.toLowerCase() || ""] || 'bg-white/5 text-slate-300 border-white/5'}`}>
                         {idea.platform}
                       </span>
+                      {isNew(idea.created_at) && (
+                        <span className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-md border bg-emerald-500/10 text-emerald-400 border-emerald-500/20 animate-pulse">
+                          NEW
+                        </span>
+                      )}
                       {idea.features?.slice(0, 1).map((feature: string, i: number) => (
                         <span key={i} className="text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 bg-white/5 text-slate-300 rounded-md border border-white/5 truncate max-w-[100px]">
                           {feature}
@@ -264,7 +284,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Right Column: Trending & New */}
+        {/* Right Column: Trending, Live Feed & Scheduler */}
         <div className="space-y-8">
           {/* Trending Problems */}
           <div className="space-y-6">
@@ -307,41 +327,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Live Feed */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-blue-400" />
-              <h2 className="text-xl font-semibold text-white">Live Feed</h2>
-            </div>
-            <div className="bg-[#121214] border border-white/5 rounded-2xl p-5 space-y-5 shadow-lg">
-              {loading ? (
-                <>
-                  <FeedSkeleton />
-                  <FeedSkeleton />
-                  <FeedSkeleton />
-                  <FeedSkeleton />
-                </>
-              ) : newIdeas.length > 0 ? (
-                newIdeas.map((idea, i) => (
-                  <div key={idea.id || i} onClick={() => setSelectedIdea(idea)} className={`group cursor-pointer ${i !== newIdeas.length - 1 ? 'pb-5 border-b border-white/5' : ''}`}>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-[10px] font-semibold tracking-wider uppercase text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                        {idea.platform}
-                      </span>
-                      <span className="text-xs text-slate-500 font-medium">
-                        {idea.created_at ? formatTimeAgo(idea.created_at) : 'Just now'}
-                      </span>
-                    </div>
-                    <h4 className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors leading-relaxed line-clamp-2">
-                      {idea.idea?.includes('AI-powered solution') ? idea.problem : idea.idea}
-                    </h4>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center text-slate-400 text-sm">No recent activity.</div>
-              )}
-            </div>
-          </div>
+        
         </div>
       </div>
 

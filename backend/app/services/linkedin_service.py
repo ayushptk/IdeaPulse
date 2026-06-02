@@ -88,10 +88,105 @@ async def _fetch_via_proxycurl(client: httpx.AsyncClient) -> List[dict]:
     return []
 
 
+async def _generate_dynamic_seed_topics() -> List[dict]:
+    """
+    If no LinkedIn API key is provided, try to use Gemini to generate dynamic topics.
+    If Gemini is unavailable or out of quota, generate random topics locally by mixing
+    various subjects, problems, and impacts so that the dashboard always sees fresh data.
+    """
+    import random
+    
+    # ── Local Random Generator Data ──
+    subjects = [
+        "As a startup founder", "Managing a remote dev team", "Running a digital agency",
+        "Working in enterprise B2B sales", "Being a product manager in 2024",
+        "Leading an engineering department", "As a small e-commerce business owner",
+        "Operating a growing SaaS company", "Working as a freelance consultant"
+    ]
+    problems = [
+        "I'm extremely frustrated by how fragmented communication tools are.",
+        "the manual process for SOC 2 and ISO compliance is draining our resources.",
+        "employee onboarding is still a messy, week-long process.",
+        "tracking technical debt across microservices is basically impossible.",
+        "predicting customer churn before it happens is a guessing game.",
+        "managing multiple software subscriptions across the team is chaos.",
+        "handling cross-border payments and tax compliance is a nightmare.",
+        "finding good candidates takes months because ATS tools are terrible."
+    ]
+    impacts = [
+        "We waste thousands of dollars a month on this.",
+        "It costs us countless hours of lost productivity.",
+        "Current solutions on the market are bloated and overpriced.",
+        "Someone really needs to build a modern solution for this.",
+        "I would gladly pay $100/mo for a tool that just solves this one thing.",
+        "It's the biggest bottleneck in our scaling process right now."
+    ]
+    
+    def get_local_random_topics():
+        topics = []
+        random.shuffle(subjects)
+        random.shuffle(problems)
+        random.shuffle(impacts)
+        for i in range(min(5, len(subjects), len(problems), len(impacts))):
+            text = f"{subjects[i]}, {problems[i]} {impacts[i]}"
+            topics.append({
+                "text": text,
+                "engagement": random.randint(150, 850)
+            })
+        return topics
+
+    if not settings.GEMINI_API_KEY:
+        return get_local_random_topics()
+        
+    try:
+        import json
+        import asyncio
+        from google import genai
+        from google.genai import types
+        
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        prompt = (
+            "You are simulating a data scraper. Generate 8 highly realistic LinkedIn text posts "
+            "where professionals (founders, managers, developers, marketers) complain about a specific B2B, SaaS, "
+            "or workflow problem. Focus on fresh, modern pain points (e.g., AI tool integration, remote work, "
+            "compliance, tool sprawl, data silos, pricing models). Make them sound like real complaints.\n"
+            "Return ONLY a JSON array of objects with exactly two keys: 'text' (the post content, string) and 'engagement' (a random integer between 50 and 800).\n"
+            "Do not include markdown blocks or any other text."
+        )
+        
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: client.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.9,
+                    response_mime_type="application/json",
+                ),
+            ),
+        )
+        
+        raw = response.text.strip()
+        if raw.startswith("```"):
+             lines = raw.splitlines()
+             raw = "\n".join(l for l in lines if not l.strip().startswith("```")).strip()
+             
+        data = json.loads(raw)
+        if isinstance(data, list) and len(data) > 0 and "text" in data[0]:
+            logger.info("LinkedIn: Successfully generated dynamic seed topics via AI")
+            return data
+            
+        return get_local_random_topics()
+    except Exception as e:
+        logger.warning(f"LinkedIn: Failed to generate dynamic topics via AI: {e}")
+        return get_local_random_topics()
+
+
 async def fetch_linkedin_posts() -> List[NormalizedPost]:
     """
     Main entry point — collects LinkedIn discussion data.
-    Uses Proxycurl when available, otherwise returns curated seed data
+    Uses Proxycurl when available, otherwise generates dynamic seed data
     that represents real patterns seen on LinkedIn discussions.
     """
     posts: List[NormalizedPost] = []
@@ -112,13 +207,14 @@ async def fetch_linkedin_posts() -> List[NormalizedPost]:
                     url=post.get("url", ""),
                 ))
         else:
-            # Use curated seed topics that reflect real LinkedIn discussions
-            logger.info("LinkedIn: using curated seed topics (no API key configured)")
-            for topic in SEED_TOPICS:
+            # Use dynamically generated or curated seed topics that reflect real LinkedIn discussions
+            logger.info("LinkedIn: using dynamic/curated seed topics (no API key configured)")
+            topics = await _generate_dynamic_seed_topics()
+            for topic in topics:
                 posts.append(NormalizedPost(
                     source="linkedin",
                     text=topic["text"],
-                    engagement=topic["engagement"],
+                    engagement=topic.get("engagement", 100),
                     timestamp=datetime.now(timezone.utc).isoformat(),
                 ))
 

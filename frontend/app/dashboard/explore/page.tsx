@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { useSavedIdeas, SavedIdea } from "@/hooks/useSavedIdeas";
 
+const _apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE = _apiUrl.replace(/\/api\/v1\/?$/, '');
+
 const PLATFORM_META: Record<string, { label: string; color: string; dot: string }> = {
   reddit: { label: "Reddit", color: "text-orange-400", dot: "bg-orange-400" },
   producthunt: { label: "ProductHunt", color: "text-rose-400", dot: "bg-rose-400" },
@@ -182,7 +185,7 @@ export default function ExplorePage() {
   const { toggleSave, isSaved } = useSavedIdeas();
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/ideas?limit=20")
+    fetch(`${API_BASE}/api/v1/ideas?limit=20`)
       .then((r) => r.json())
       .then((data) => {
         let all: SavedIdea[] = [];

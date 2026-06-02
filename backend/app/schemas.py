@@ -103,3 +103,15 @@ class PipelineStatusResponse(BaseModel):
     status: str
     ideas_generated: int
     message: str
+
+
+class SchedulerStatusResponse(BaseModel):
+    """Live status of the background scheduler."""
+    scheduler_running: bool
+    last_run_at: Optional[str] = None
+    last_run_ideas: int = 0
+    last_run_status: str = "never"
+    next_run_at: Optional[str] = None
+    countdown_seconds: int = 0
+    cron_schedule: str = ""
+

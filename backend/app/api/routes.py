@@ -14,6 +14,7 @@ from app.pipelines.indie_pipeline import run_indie_pipeline
 from app.pipelines.linkedin_pipeline import run_linkedin_pipeline
 from app.pipelines.producthunt_pipeline import run_producthunt_pipeline
 from app.pipelines.reddit_pipeline import run_reddit_pipeline
+from app.scheduler import get_scheduler_status
 from app.schemas import (
     HealthResponse,
     IdeaResponse,
@@ -21,6 +22,7 @@ from app.schemas import (
     LinkedInFounderIdea,
     PipelineStatusResponse,
     PlatformIdeasResponse,
+    SchedulerStatusResponse,
 )
 
 from app.api.auth import router as auth_router
@@ -74,9 +76,49 @@ async def health_check(db: AsyncSession = Depends(get_db)):
     )
 
 
+@router.get(
+    "/scheduler/status",
+    response_model=SchedulerStatusResponse,
+    tags=["System"],
+    summary="Get scheduler status and next pipeline run countdown",
+)
+async def get_scheduler_status_endpoint():
+    """
+    Returns live scheduler state including:
+    - When the last pipeline run occurred
+    - How many ideas were generated
+    - When the next auto-run will happen
+    - Countdown in seconds until next run
+    """
+    return SchedulerStatusResponse(**get_scheduler_status())
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Ideas Endpoints
 # ─────────────────────────────────────────────────────────────────────────────
+
+@router.get(
+    "/ideas/latest",
+    response_model=list[IdeaResponse],
+    tags=["Ideas"],
+    summary="Get the most recently created ideas across all platforms",
+)
+async def get_latest_ideas(
+    limit: int = Query(default=20, ge=1, le=100, description="Number of latest ideas to return"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Return the N most recently created ideas across all platforms,
+    ordered by creation time descending. Used by the dashboard Live Feed.
+    """
+    result = await db.execute(
+        select(Idea)
+        .order_by(desc(Idea.created_at), desc(Idea.score))
+        .limit(limit)
+    )
+    ideas = result.scalars().all()
+    return [IdeaResponse.model_validate(idea) for idea in ideas]
+
 
 @router.get(
     "/ideas/{platform}",
@@ -215,6 +257,7 @@ async def get_daily_hn_ideas(
         count=len(ideas),
         ideas=[IdeaResponse.model_validate(idea) for idea in ideas],
     )
+
 
 
 @router.post(

@@ -76,88 +76,91 @@ class RedditEndpoint(NamedTuple):
     limit: int = 50
 
 
+import xml.etree.ElementTree as ET
+import re
+
 REDDIT_ENDPOINTS: List[RedditEndpoint] = [
     # ── SaaS hot posts ──
     RedditEndpoint(
-        url="https://www.reddit.com/r/SaaS/hot.json",
+        url="https://www.reddit.com/r/SaaS/hot.rss",
         label="r/SaaS (hot)",
         limit=50,
     ),
     # ── Entrepreneur new posts ──
     RedditEndpoint(
-        url="https://www.reddit.com/r/Entrepreneur/new.json",
+        url="https://www.reddit.com/r/Entrepreneur/new.rss",
         label="r/Entrepreneur (new)",
         limit=50,
     ),
     # ── IndieHackers top of day ──
     RedditEndpoint(
-        url="https://www.reddit.com/r/indiehackers/top.json?t=day",
+        url="https://www.reddit.com/r/indiehackers/top.rss?t=day",
         label="r/indiehackers (top/day)",
         limit=50,
     ),
     # ── SideProject hot ──
     RedditEndpoint(
-        url="https://www.reddit.com/r/SideProject/hot.json",
+        url="https://www.reddit.com/r/SideProject/hot.rss",
         label="r/SideProject (hot)",
         limit=50,
     ),
     # ── SideProject new ──
     RedditEndpoint(
-        url="https://www.reddit.com/r/SideProject/new.json",
+        url="https://www.reddit.com/r/SideProject/new.rss",
         label="r/SideProject (new)",
         limit=30,
     ),
     # ── smallbusiness hot ──
     RedditEndpoint(
-        url="https://www.reddit.com/r/smallbusiness/hot.json",
+        url="https://www.reddit.com/r/smallbusiness/hot.rss",
         label="r/smallbusiness (hot)",
         limit=50,
     ),
     # ── smallbusiness new ──
     RedditEndpoint(
-        url="https://www.reddit.com/r/smallbusiness/new.json",
+        url="https://www.reddit.com/r/smallbusiness/new.rss",
         label="r/smallbusiness (new)",
         limit=30,
     ),
     # ── r/all new — broad discovery ──
     RedditEndpoint(
-        url="https://www.reddit.com/r/all/new.json",
+        url="https://www.reddit.com/r/all/new.rss",
         label="r/all (new)",
         limit=25,
     ),
     # ── Targeted search: "i wish there was a saas" ──
     RedditEndpoint(
-        url="https://www.reddit.com/search.json?q=i+wish+there+was+a+saas&sort=new",
+        url="https://www.reddit.com/search.rss?q=i+wish+there+was+a+saas&sort=new",
         label="search: 'i wish there was a saas'",
         limit=25,
     ),
     # ── Targeted search: pain point tool ──
     RedditEndpoint(
-        url="https://www.reddit.com/search.json?q=anyone+know+a+tool+for&sort=new",
+        url="https://www.reddit.com/search.rss?q=anyone+know+a+tool+for&sort=new",
         label="search: 'anyone know a tool'",
         limit=25,
     ),
     # ── Targeted search: would pay for ──
     RedditEndpoint(
-        url="https://www.reddit.com/search.json?q=%22would+pay+for%22+saas&sort=new",
+        url="https://www.reddit.com/search.rss?q=%22would+pay+for%22+saas&sort=new",
         label="search: 'would pay for' saas",
         limit=25,
     ),
     # ── Targeted search: why is there no ──
     RedditEndpoint(
-        url="https://www.reddit.com/search.json?q=%22why+is+there+no%22+app+OR+tool&sort=new",
+        url="https://www.reddit.com/search.rss?q=%22why+is+there+no%22+app+OR+tool&sort=new",
         label="search: 'why is there no' tool",
         limit=25,
     ),
     # ── startups hot ──
     RedditEndpoint(
-        url="https://www.reddit.com/r/startups/hot.json",
+        url="https://www.reddit.com/r/startups/hot.rss",
         label="r/startups (hot)",
         limit=30,
     ),
     # ── microsaas hot ──
     RedditEndpoint(
-        url="https://www.reddit.com/r/microsaas/hot.json",
+        url="https://www.reddit.com/r/microsaas/hot.rss",
         label="r/microsaas (hot)",
         limit=30,
     ),
@@ -193,7 +196,7 @@ def _has_problem_signal(text: str) -> bool:
 async def _warm_up_session(client: httpx.AsyncClient) -> None:
     """
     Hit the Reddit homepage first to establish a session cookie.
-    Without this, subsequent JSON requests may receive 403 challenges.
+    Without this, subsequent requests may receive 403 challenges.
     """
     try:
         await client.get(
@@ -214,14 +217,13 @@ async def _fetch_endpoint(
     client: httpx.AsyncClient,
     endpoint: RedditEndpoint,
 ) -> List[dict]:
-    """Fetch raw post children from a single Reddit JSON endpoint."""
-    # Build URL with limit and raw_json params
+    """Fetch raw post children from a single Reddit RSS endpoint."""
     separator = "&" if "?" in endpoint.url else "?"
-    url = f"{endpoint.url}{separator}limit={endpoint.limit}&raw_json=1"
+    url = f"{endpoint.url}{separator}limit={endpoint.limit}"
 
     headers = {
         "User-Agent": _USER_AGENT,
-        "Accept": "application/json, text/plain, */*",
+        "Accept": "text/xml, application/xml, application/atom+xml, text/html, */*",
         "Accept-Language": "en-US,en;q=0.9",
         "Referer": "https://www.reddit.com/",
     }
@@ -242,13 +244,34 @@ async def _fetch_endpoint(
 
         response.raise_for_status()
 
-        content_type = response.headers.get("content-type", "")
-        if "json" not in content_type:
-            logger.warning(f"Reddit: non-JSON response on {endpoint.label} (got {content_type[:40]})")
-            return []
-
-        data = response.json()
-        children = data.get("data", {}).get("children", [])
+        # Parse RSS Atom XML
+        root = ET.fromstring(response.text)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        children = []
+        for entry in root.findall("atom:entry", ns):
+            title = entry.find("atom:title", ns)
+            content = entry.find("atom:content", ns)
+            link = entry.find("atom:link", ns)
+            updated = entry.find("atom:updated", ns)
+            
+            title_text = title.text if title is not None else ""
+            content_text = content.text if content is not None else ""
+            if content_text:
+                content_text = re.sub(r'<[^>]+>', ' ', content_text).strip()
+            link_href = link.attrib.get("href", "") if link is not None else ""
+            updated_text = updated.text if updated is not None else ""
+            
+            children.append({
+                "data": {
+                    "title": title_text,
+                    "selftext": content_text,
+                    "permalink": link_href.replace("https://www.reddit.com", ""),
+                    "created_utc": updated_text,
+                    "ups": 10, # RSS has no votes, fake a small baseline
+                    "num_comments": 0
+                }
+            })
+            
         logger.info(f"Reddit: fetched {len(children)} posts from {endpoint.label}")
         return children
 
@@ -301,11 +324,14 @@ def _parse_post(post: dict) -> NormalizedPost | None:
 
     # Build timestamp
     created_utc = data.get("created_utc", 0)
-    timestamp = (
-        datetime.fromtimestamp(created_utc, tz=timezone.utc).isoformat()
-        if created_utc
-        else ""
-    )
+    if isinstance(created_utc, str):
+        timestamp = created_utc
+    else:
+        timestamp = (
+            datetime.fromtimestamp(created_utc, tz=timezone.utc).isoformat()
+            if created_utc
+            else ""
+        )
 
     return NormalizedPost(
         source="reddit",
