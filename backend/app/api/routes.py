@@ -45,6 +45,9 @@ PLATFORM_PIPELINES = {
 PLATFORM_ALIASES = {
     "indiehackers": "indie",
     "hackernews": "hn",
+    "linkedln": "linkedin",
+    "linkeldin": "linkedin",
+    "linked-in": "linkedin",
 }
 
 
