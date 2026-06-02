@@ -1,12 +1,12 @@
-# ProductSearch 🚀
+# IdeaPulse 🚀
 
-![ProductSearch Banner](https://img.shields.io/badge/ProductSearch-Discover_SaaS_Ideas-indigo?style=for-the-badge)
+![IdeaPulse Banner](https://img.shields.io/badge/IdeaPulse-Discover_SaaS_Ideas-indigo?style=for-the-badge)
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Gemini AI](https://img.shields.io/badge/Gemini_AI-1A73E8?style=for-the-badge&logo=google&logoColor=white)
 
-ProductSearch is an AI-powered SaaS idea discovery platform. It automatically scans top social networks and developer communities (Reddit, HackerNews, ProductHunt, LinkedIn, IndieHackers), clusters trending discussions, and uses Google Gemini AI to synthesize highly validated SaaS product opportunities.
+IdeaPulse is an AI-powered SaaS idea discovery platform. It automatically scans top social networks and developer communities (Reddit, HackerNews, ProductHunt, LinkedIn, IndieHackers), clusters trending discussions, and uses Google Gemini AI to synthesize highly validated SaaS product opportunities.
 
 ## ✨ Features
 
@@ -61,7 +61,7 @@ ProductSearch is an AI-powered SaaS idea discovery platform. It automatically sc
 3. **Configure Environment Variables:**
    Create a `.env` file based on `.env.example` and add your database credentials and API keys.
    ```env
-   DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/productsearch
+   DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/ideapulse
    GEMINI_API_KEY=your_gemini_api_key_here
    ```
 
@@ -94,7 +94,7 @@ ProductSearch is an AI-powered SaaS idea discovery platform. It automatically sc
 
 ## 🎯 Keyword Filtering Strategy
 
-To ensure we extract genuine user pain points and high-value SaaS opportunities, ProductSearch utilizes targeted keyword filtering during the data ingestion phase. By looking for specific complaint-oriented phrases across social platforms, we filter out the noise and focus directly on what users actually need.
+To ensure we extract genuine user pain points and high-value SaaS opportunities, IdeaPulse utilizes targeted keyword filtering during the data ingestion phase. By looking for specific complaint-oriented phrases across social platforms, we filter out the noise and focus directly on what users actually need.
 
 **High-Signal Keywords & Phrases Used for Filtering:**
 
