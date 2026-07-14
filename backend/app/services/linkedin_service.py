@@ -165,7 +165,7 @@ async def _generate_dynamic_seed_topics() -> List[dict]:
         raw = response.text.strip()
         if raw.startswith("```"):
              lines = raw.splitlines()
-             raw = "\n".join(l for l in lines if not l.strip().startswith("```")).strip()
+             raw = "\n".join(line for line in lines if not line.strip().startswith("```")).strip()
              
         data = json.loads(raw)
         if isinstance(data, list) and len(data) > 0 and "text" in data[0]:

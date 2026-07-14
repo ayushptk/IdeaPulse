@@ -21,6 +21,8 @@ from datetime import datetime, timezone
 from typing import List, NamedTuple
 
 import httpx
+import re
+import xml.etree.ElementTree as ET
 
 from app.config import get_settings
 from app.schemas import NormalizedPost
@@ -66,9 +68,6 @@ class RedditEndpoint(NamedTuple):
     url: str
     label: str          
     limit: int = 50
-
-import xml.etree.ElementTree as ET
-import re
 
 REDDIT_ENDPOINTS: List[RedditEndpoint] = [
     

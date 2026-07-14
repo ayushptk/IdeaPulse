@@ -14,17 +14,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: frontendok/package-lock.json
       - name: Install dependencies (frontend)
-        run: cd frontend && npm ci
+        run: cd frontendok && npm ci
       - name: Lint (frontend)
-        run: cd frontend && npm run lint
+        run: cd frontendok && npm run lint
       - name: Build (frontend)
-        run: cd frontend && npm run build
+        run: cd frontendok && npm run build
       - name: Test (frontend)
-        run: cd frontend && npm test
+        run: cd frontendok && npm test
 
   backend:
     runs-on: ubuntu-latest
