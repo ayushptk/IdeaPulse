@@ -12,7 +12,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.db import Base
 
-
 class Idea(Base):
     """
     Core entity — one row per generated SaaS idea.
@@ -37,7 +36,6 @@ class Idea(Base):
     monetization: Mapped[str] = mapped_column(Text, nullable=False)
     score: Mapped[float] = mapped_column(Float, default=0.0, index=True)
 
-    # ── Metadata ──
     source_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     engagement: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     content_hash: Mapped[Optional[str]] = mapped_column(

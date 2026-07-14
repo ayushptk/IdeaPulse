@@ -13,7 +13,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.db import Base
 
-
 class Platform(Base):
     """Represents a source platform (e.g., reddit, producthunt)."""
     __tablename__ = "platforms"
@@ -24,14 +23,13 @@ class Platform(Base):
 
     posts: Mapped[list["RawPost"]] = relationship("RawPost", back_populates="platform")
 
-
 class RawPost(Base):
     """Stores raw data fetched from a platform before it is processed into an Idea."""
     __tablename__ = "raw_posts"
 
     id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), primary_key=True)
     platform_id: Mapped[str] = mapped_column(String(50), ForeignKey("platforms.id"), index=True)
-    external_id: Mapped[str] = mapped_column(String(100), index=True)  # ID from the platform (e.g., tweet id)
+    external_id: Mapped[str] = mapped_column(String(100), index=True)  
     
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
@@ -44,7 +42,7 @@ class RawPost(Base):
     posted_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), index=True)
     fetched_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), 
-        server_default=datetime.datetime.now(datetime.timezone.utc).isoformat()  # Fallback
+        server_default=datetime.datetime.now(datetime.timezone.utc).isoformat()  
     )
     
     raw_json: Mapped[dict] = mapped_column(JSONB, nullable=True)

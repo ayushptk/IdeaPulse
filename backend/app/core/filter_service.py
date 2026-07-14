@@ -18,19 +18,15 @@ from app.schemas import NormalizedPost
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# ── Spam / noise patterns ──
 NOISE_PATTERNS = [
     re.compile(r"(buy now|click here|discount|promo code)", re.IGNORECASE),
     re.compile(r"(follow me|subscribe|giveaway|free money)", re.IGNORECASE),
-    re.compile(r"(https?://\S+){3,}", re.IGNORECASE),  # Excessive links
-    re.compile(r"[🎁🎉💰💵🤑]{2,}"),  # Spam emoji clusters
+    re.compile(r"(https?://\S+){3,}", re.IGNORECASE),  
+    re.compile(r"[🎁🎉💰💵🤑]{2,}"),  
 ]
 
-# ── Problem-indicator keywords — used to bypass engagement threshold ──
-# These mirror the first-pass filter in reddit_service.py so that posts
-# with strong problem signals are never dropped due to low engagement.
 PROBLEM_KEYWORDS = [
-    # User-specified high-signal phrases (first quick filter)
+    
     "i wish",
     "i hate",
     "so frustrated",
@@ -45,7 +41,7 @@ PROBLEM_KEYWORDS = [
     "im struggling with",
     "need something that",
     "would pay for",
-    # Additional NLP boosters
+    
     "wish there was",
     "need a tool",
     "looking for a tool",
@@ -74,17 +70,14 @@ PROBLEM_KEYWORDS = [
     "difficult",
 ]
 
-
 def _is_noise(text: str) -> bool:
     """Check if text matches known spam/noise patterns."""
     return any(pattern.search(text) for pattern in NOISE_PATTERNS)
-
 
 def _has_problem_signal(text: str) -> bool:
     """Check if text contains keywords indicating a real problem."""
     text_lower = text.lower()
     return any(keyword in text_lower for keyword in PROBLEM_KEYWORDS)
-
 
 def _text_fingerprint(text: str) -> str:
     """
@@ -92,9 +85,8 @@ def _text_fingerprint(text: str) -> str:
     Strips whitespace and lowercases for fuzzy matching.
     """
     cleaned = re.sub(r"\s+", " ", text.lower().strip())
-    # Use first 100 chars as fingerprint (good enough for near-duplicates)
+    
     return cleaned[:100]
-
 
 def filter_posts(posts: List[NormalizedPost]) -> List[NormalizedPost]:
     """
@@ -112,21 +104,18 @@ def filter_posts(posts: List[NormalizedPost]) -> List[NormalizedPost]:
     filtered: List[NormalizedPost] = []
 
     for post in posts:
-        # Gate 1: Minimum text length
+        
         if len(post.text.strip()) < 30:
             continue
 
-        # Gate 2: Noise detection
         if _is_noise(post.text):
             continue
 
-        # Gate 3: Engagement threshold
         if post.engagement < settings.MIN_ENGAGEMENT_THRESHOLD:
-            # Exception: keep if it has strong problem signals
+            
             if not _has_problem_signal(post.text):
                 continue
 
-        # Gate 4: Deduplicate within batch
         fingerprint = _text_fingerprint(post.text)
         if fingerprint in seen_fingerprints:
             continue

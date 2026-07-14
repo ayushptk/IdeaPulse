@@ -20,11 +20,9 @@ settings = get_settings()
 
 scheduler = AsyncIOScheduler()
 
-# ── Runtime state exposed to status endpoint ──
 _last_run_at: Optional[datetime] = None
 _last_run_ideas: int = 0
 _last_run_status: str = "never"
-
 
 async def _run_all_pipelines_job():
     """
@@ -65,7 +63,6 @@ async def _run_all_pipelines_job():
     _last_run_status = "success"
     logger.info(f"Scheduler: daily run complete — {total_ideas} total new ideas")
 
-
 def start_scheduler():
     """Start the background scheduler with configured cron trigger."""
     trigger = CronTrigger(
@@ -80,7 +77,7 @@ def start_scheduler():
         id="daily_pipeline_run",
         name="Daily SaaS Idea Discovery",
         replace_existing=True,
-        max_instances=1,  # Prevent overlapping runs
+        max_instances=1,  
     )
 
     scheduler.start()
@@ -89,13 +86,11 @@ def start_scheduler():
         f"{settings.PIPELINE_CRON_HOUR:02d}:{settings.PIPELINE_CRON_MINUTE:02d} UTC"
     )
 
-
 def stop_scheduler():
     """Gracefully shut down the scheduler."""
     if scheduler.running:
         scheduler.shutdown(wait=False)
         logger.info("Scheduler: stopped")
-
 
 def get_scheduler_status() -> dict:
     """

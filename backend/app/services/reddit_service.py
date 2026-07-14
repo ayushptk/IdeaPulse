@@ -28,10 +28,6 @@ from app.schemas import NormalizedPost
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Strong problem-indicating keywords — FIRST quick filter
-# Any post matching at least one of these passes to the pipeline.
-# ─────────────────────────────────────────────────────────────────────────────
 PROBLEM_KEYWORDS = [
     "i wish",
     "i hate",
@@ -47,7 +43,7 @@ PROBLEM_KEYWORDS = [
     "im struggling with",
     "need something that",
     "would pay for",
-    # Additional high-signal phrases
+    
     "looking for a tool",
     "can't find a good",
     "cant find a good",
@@ -66,99 +62,94 @@ PROBLEM_KEYWORDS = [
     "there has to be a better way",
 ]
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Endpoint definitions — (url_template, sort_type, subreddit_label)
-# ─────────────────────────────────────────────────────────────────────────────
-
 class RedditEndpoint(NamedTuple):
     url: str
-    label: str          # Human-readable label for logging
+    label: str          
     limit: int = 50
-
 
 import xml.etree.ElementTree as ET
 import re
 
 REDDIT_ENDPOINTS: List[RedditEndpoint] = [
-    # ── SaaS hot posts ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/r/SaaS/hot.rss",
         label="r/SaaS (hot)",
         limit=50,
     ),
-    # ── Entrepreneur new posts ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/r/Entrepreneur/new.rss",
         label="r/Entrepreneur (new)",
         limit=50,
     ),
-    # ── IndieHackers top of day ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/r/indiehackers/top.rss?t=day",
         label="r/indiehackers (top/day)",
         limit=50,
     ),
-    # ── SideProject hot ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/r/SideProject/hot.rss",
         label="r/SideProject (hot)",
         limit=50,
     ),
-    # ── SideProject new ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/r/SideProject/new.rss",
         label="r/SideProject (new)",
         limit=30,
     ),
-    # ── smallbusiness hot ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/r/smallbusiness/hot.rss",
         label="r/smallbusiness (hot)",
         limit=50,
     ),
-    # ── smallbusiness new ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/r/smallbusiness/new.rss",
         label="r/smallbusiness (new)",
         limit=30,
     ),
-    # ── r/all new — broad discovery ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/r/all/new.rss",
         label="r/all (new)",
         limit=25,
     ),
-    # ── Targeted search: "i wish there was a saas" ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/search.rss?q=i+wish+there+was+a+saas&sort=new",
         label="search: 'i wish there was a saas'",
         limit=25,
     ),
-    # ── Targeted search: pain point tool ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/search.rss?q=anyone+know+a+tool+for&sort=new",
         label="search: 'anyone know a tool'",
         limit=25,
     ),
-    # ── Targeted search: would pay for ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/search.rss?q=%22would+pay+for%22+saas&sort=new",
         label="search: 'would pay for' saas",
         limit=25,
     ),
-    # ── Targeted search: why is there no ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/search.rss?q=%22why+is+there+no%22+app+OR+tool&sort=new",
         label="search: 'why is there no' tool",
         limit=25,
     ),
-    # ── startups hot ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/r/startups/hot.rss",
         label="r/startups (hot)",
         limit=30,
     ),
-    # ── microsaas hot ──
+    
     RedditEndpoint(
         url="https://www.reddit.com/r/microsaas/hot.rss",
         label="r/microsaas (hot)",
@@ -166,19 +157,13 @@ REDDIT_ENDPOINTS: List[RedditEndpoint] = [
     ),
 ]
 
-# Browser-like User-Agent so Reddit's CDN doesn't block us
 _USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/124.0.0.0 Safari/537.36"
 )
-# Pause between requests to avoid 429s (seconds)
+
 _REQUEST_DELAY = 1.5
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Quick problem-keyword filter
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _has_problem_signal(text: str) -> bool:
     """
@@ -187,11 +172,6 @@ def _has_problem_signal(text: str) -> bool:
     """
     text_lower = text.lower()
     return any(kw in text_lower for kw in PROBLEM_KEYWORDS)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Fetch helpers
-# ─────────────────────────────────────────────────────────────────────────────
 
 async def _warm_up_session(client: httpx.AsyncClient) -> None:
     """
@@ -208,10 +188,9 @@ async def _warm_up_session(client: httpx.AsyncClient) -> None:
             }
         )
         logger.info("Reddit: session warmed up")
-        await asyncio.sleep(2.0)  # Let Reddit's CDN settle
+        await asyncio.sleep(2.0)  
     except Exception as e:
         logger.warning(f"Reddit: warm-up failed (continuing anyway): {e}")
-
 
 async def _fetch_endpoint(
     client: httpx.AsyncClient,
@@ -244,7 +223,6 @@ async def _fetch_endpoint(
 
         response.raise_for_status()
 
-        # Parse RSS Atom XML
         root = ET.fromstring(response.text)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         children = []
@@ -267,7 +245,7 @@ async def _fetch_endpoint(
                     "selftext": content_text,
                     "permalink": link_href.replace("https://www.reddit.com", ""),
                     "created_utc": updated_text,
-                    "ups": 10, # RSS has no votes, fake a small baseline
+                    "ups": 10, 
                     "num_comments": 0
                 }
             })
@@ -285,11 +263,6 @@ async def _fetch_endpoint(
         logger.error(f"Reddit: unexpected error on {endpoint.label}: {e}")
         return []
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Post parsing
-# ─────────────────────────────────────────────────────────────────────────────
-
 def _parse_post(post: dict) -> NormalizedPost | None:
     """
     Convert a raw Reddit post child into a NormalizedPost.
@@ -303,26 +276,21 @@ def _parse_post(post: dict) -> NormalizedPost | None:
     title: str = data.get("title", "").strip()
     body: str = data.get("selftext", "").strip()
 
-    # Skip deleted/removed posts
     if body in ("[deleted]", "[removed]"):
         body = ""
 
     full_text = f"{title}\n{body}" if body else title
 
-    # Gate 1: minimum length
     if len(full_text) < 30:
         return None
 
-    # Gate 2: PROBLEM_KEYWORDS first filter
     if not _has_problem_signal(full_text):
         return None
 
-    # Compute engagement (upvotes + comments)
     upvotes = data.get("ups", 0) or 0
     comments = data.get("num_comments", 0) or 0
     engagement = upvotes + comments
 
-    # Build timestamp
     created_utc = data.get("created_utc", 0)
     if isinstance(created_utc, str):
         timestamp = created_utc
@@ -335,16 +303,11 @@ def _parse_post(post: dict) -> NormalizedPost | None:
 
     return NormalizedPost(
         source="reddit",
-        text=full_text[:2000],  # Cap to control downstream token usage
+        text=full_text[:2000],  
         engagement=engagement,
         timestamp=timestamp,
         url=f"https://reddit.com{data.get('permalink', '')}",
     )
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Main entry point
-# ─────────────────────────────────────────────────────────────────────────────
 
 async def fetch_reddit_posts() -> List[NormalizedPost]:
     """
@@ -360,13 +323,12 @@ async def fetch_reddit_posts() -> List[NormalizedPost]:
     all_posts: List[NormalizedPost] = []
     seen_urls: set[str] = set()
 
-    # Use a persistent client so cookies are shared across all requests
     async with httpx.AsyncClient(
         timeout=25.0,
         follow_redirects=True,
-        # Keep cookies across requests — critical for avoiding Reddit 403s
+        
     ) as client:
-        # Step 0: warm-up handshake to establish Reddit session cookie
+        
         await _warm_up_session(client)
 
         for i, endpoint in enumerate(REDDIT_ENDPOINTS):
@@ -377,7 +339,7 @@ async def fetch_reddit_posts() -> List[NormalizedPost]:
                 parsed = _parse_post(child)
                 if parsed is None:
                     continue
-                # URL-level deduplication across endpoints
+                
                 if parsed.url and parsed.url in seen_urls:
                     continue
                 if parsed.url:
@@ -390,11 +352,9 @@ async def fetch_reddit_posts() -> List[NormalizedPost]:
                 f"{keyword_matched}/{len(raw_children)} posts matched problem keywords"
             )
 
-            # Polite delay between requests (skip after last endpoint)
             if i < len(REDDIT_ENDPOINTS) - 1:
                 await asyncio.sleep(_REQUEST_DELAY)
 
-    # Sort by engagement descending — most discussed problems first
     all_posts.sort(key=lambda p: p.engagement, reverse=True)
 
     total = len(all_posts)

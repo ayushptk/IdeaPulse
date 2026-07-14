@@ -20,7 +20,6 @@ from app.schemas import NormalizedPost
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# ── Keywords for Google search-based discovery ──
 SEARCH_QUERIES = [
     "site:linkedin.com 'biggest challenge' SaaS",
     "site:linkedin.com 'looking for tool' software",
@@ -29,7 +28,6 @@ SEARCH_QUERIES = [
     "site:linkedin.com 'pain point' startup",
 ]
 
-# ── Pre-curated LinkedIn discussion topics (used when API is unavailable) ──
 SEED_TOPICS = [
     {
         "text": "As a small business owner, I'm frustrated with the lack of affordable CRM tools that integrate seamlessly with email marketing. Current solutions are either too expensive or too complex for teams under 10.",
@@ -65,7 +63,6 @@ SEED_TOPICS = [
     },
 ]
 
-
 async def _fetch_via_proxycurl(client: httpx.AsyncClient) -> List[dict]:
     """
     Fetch LinkedIn posts via Proxycurl API (requires API key).
@@ -75,7 +72,7 @@ async def _fetch_via_proxycurl(client: httpx.AsyncClient) -> List[dict]:
         return []
 
     try:
-        # Proxycurl's search endpoint (example — adjust per actual API)
+        
         response = await client.get(
             "https://nubela.co/proxycurl/api/v2/linkedin/company/posts",
             headers={"Authorization": f"Bearer {settings.LINKEDIN_API_KEY}"},
@@ -87,7 +84,6 @@ async def _fetch_via_proxycurl(client: httpx.AsyncClient) -> List[dict]:
         logger.warning(f"LinkedIn Proxycurl fetch failed: {e}")
     return []
 
-
 async def _generate_dynamic_seed_topics() -> List[dict]:
     """
     If no LinkedIn API key is provided, try to use Gemini to generate dynamic topics.
@@ -95,8 +91,7 @@ async def _generate_dynamic_seed_topics() -> List[dict]:
     various subjects, problems, and impacts so that the dashboard always sees fresh data.
     """
     import random
-    
-    # ── Local Random Generator Data ──
+
     subjects = [
         "As a startup founder", "Managing a remote dev team", "Running a digital agency",
         "Working in enterprise B2B sales", "Being a product manager in 2024",
@@ -182,7 +177,6 @@ async def _generate_dynamic_seed_topics() -> List[dict]:
         logger.warning(f"LinkedIn: Failed to generate dynamic topics via AI: {e}")
         return get_local_random_topics()
 
-
 async def fetch_linkedin_posts() -> List[NormalizedPost]:
     """
     Main entry point — collects LinkedIn discussion data.
@@ -207,7 +201,7 @@ async def fetch_linkedin_posts() -> List[NormalizedPost]:
                     url=post.get("url", ""),
                 ))
         else:
-            # Use dynamically generated or curated seed topics that reflect real LinkedIn discussions
+            
             logger.info("LinkedIn: using dynamic/curated seed topics (no API key configured)")
             topics = await _generate_dynamic_seed_topics()
             for topic in topics:

@@ -10,7 +10,7 @@ class User(Base):
     name = Column(String, nullable=True)
     picture = Column(String, nullable=True)
     hashed_password = Column(String, nullable=True)
-    provider = Column(String, nullable=True) # e.g., "google", "local"
+    provider = Column(String, nullable=True) 
     provider_id = Column(String, unique=True, index=True, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)

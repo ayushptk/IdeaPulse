@@ -25,7 +25,6 @@ from app.config import get_settings
 from app.database.db import close_db, init_db
 from app.scheduler import start_scheduler, stop_scheduler
 
-# ── Configure structured logging ──
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s │ %(levelname)-8s │ %(name)-30s │ %(message)s",
@@ -33,11 +32,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 settings = get_settings()
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Application Lifespan
-# ─────────────────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -54,24 +48,17 @@ async def lifespan(app: FastAPI):
     """
     logger.info(f"🚀 Starting {settings.APP_NAME} v{settings.APP_VERSION}")
 
-    # Startup
     await init_db()
     logger.info("✅ Database initialized")
 
     start_scheduler()
     logger.info("✅ Scheduler started")
 
-    yield  # Application runs here
+    yield  
 
-    # Shutdown
     stop_scheduler()
     await close_db()
     logger.info("👋 Shutdown complete")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# FastAPI Application
-# ─────────────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -86,20 +73,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ── CORS — allow frontend access ──
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Tighten in production
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ── Register API routes ──
 app.include_router(router, prefix="/api/v1")
 
-
-# ── Root endpoint ──
 @app.get("/", tags=["System"])
 async def root():
     """Root endpoint — confirms the API is running."""
@@ -109,4 +92,3 @@ async def root():
         "docs": "/docs",
         "api": "/api/v1",
     }
-# Dev reload trigger

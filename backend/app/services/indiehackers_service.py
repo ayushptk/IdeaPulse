@@ -20,7 +20,6 @@ from app.schemas import NormalizedPost
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# ── Indie Hackers forum URLs for scraping ──
 IH_BASE_URL = "https://www.indiehackers.com"
 IH_FEED_URLS = [
     f"{IH_BASE_URL}/feed?sort=hot",
@@ -28,7 +27,6 @@ IH_FEED_URLS = [
     f"{IH_BASE_URL}/group/product-feedback",
 ]
 
-# ── Curated seed data reflecting real Indie Hackers discussions ──
 SEED_TOPICS = [
     {
         "text": "I've been selling a Chrome extension for 2 years and the #1 feature request I keep getting is automated data export to spreadsheets. Every B2B tool needs this and yet most make it an enterprise-only feature. There's a horizontal play here — a universal export layer.",
@@ -64,7 +62,6 @@ SEED_TOPICS = [
     },
 ]
 
-
 async def _scrape_ih_posts(client: httpx.AsyncClient) -> List[dict]:
     """
     Attempt to scrape Indie Hackers forum posts.
@@ -78,17 +75,16 @@ async def _scrape_ih_posts(client: httpx.AsyncClient) -> List[dict]:
                 "Accept": "application/json",
             })
             if response.status_code == 200:
-                # Try JSON response (some IH endpoints return JSON)
+                
                 try:
                     data = response.json()
                     if isinstance(data, dict) and "posts" in data:
                         posts.extend(data["posts"])
                 except Exception:
-                    pass  # HTML response — would need parsing
+                    pass  
         except httpx.HTTPError as e:
             logger.warning(f"Indie Hackers: scrape failed for {url}: {e}")
     return posts
-
 
 async def fetch_indiehackers_posts() -> List[NormalizedPost]:
     """
@@ -117,7 +113,7 @@ async def fetch_indiehackers_posts() -> List[NormalizedPost]:
                     url=post.get("url", ""),
                 ))
         else:
-            # Use curated seed topics from real Indie Hackers discussions
+            
             logger.info("Indie Hackers: using curated seed topics (scraping unavailable)")
             for topic in SEED_TOPICS:
                 posts.append(NormalizedPost(

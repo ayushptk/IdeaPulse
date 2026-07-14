@@ -8,11 +8,6 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Internal Pipeline Schemas
-# ─────────────────────────────────────────────────────────────────────────────
-
 class NormalizedPost(BaseModel):
     """
     Standardized representation of a post from ANY platform.
@@ -24,14 +19,12 @@ class NormalizedPost(BaseModel):
     timestamp: str = Field("", description="ISO-8601 timestamp of the post")
     url: Optional[str] = Field(None, description="Original post URL for reference")
 
-
 class ClusterResult(BaseModel):
     """A cluster of related posts grouped by topic similarity."""
     cluster_id: int
     representative_text: str = Field(..., description="Most representative post in the cluster")
     posts: List[NormalizedPost]
     avg_engagement: float
-
 
 class GeneratedIdea(BaseModel):
     """
@@ -45,7 +38,6 @@ class GeneratedIdea(BaseModel):
     monetization: str = Field(..., description="Revenue model suggestion")
     score: float = Field(..., ge=1, le=10, description="Viability score 1–10")
 
-
 class LinkedInFounderIdea(BaseModel):
     """Founder-style LinkedIn SaaS idea extraction response."""
     idea_name: str
@@ -58,15 +50,9 @@ class LinkedInFounderIdea(BaseModel):
     competitor_gap: str
     score: float = Field(..., ge=1, le=10)
 
-
 class LinkedInExtractRequest(BaseModel):
     """Input payload for LinkedIn post-to-ideas extraction."""
     post_text: str = Field(..., min_length=20, description="LinkedIn post content")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# API Response Schemas
-# ─────────────────────────────────────────────────────────────────────────────
 
 class IdeaResponse(BaseModel):
     """Public API shape for a single idea."""
@@ -82,13 +68,11 @@ class IdeaResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
-
 class PlatformIdeasResponse(BaseModel):
     """Wraps the top-N ideas for a given platform."""
     platform: str
     count: int
     ideas: List[IdeaResponse]
-
 
 class HealthResponse(BaseModel):
     """Health-check response."""
@@ -96,14 +80,12 @@ class HealthResponse(BaseModel):
     version: str
     database: str = "connected"
 
-
 class PipelineStatusResponse(BaseModel):
     """Response after triggering a pipeline run."""
     platform: str
     status: str
     ideas_generated: int
     message: str
-
 
 class SchedulerStatusResponse(BaseModel):
     """Live status of the background scheduler."""

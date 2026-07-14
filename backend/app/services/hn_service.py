@@ -29,14 +29,12 @@ FEED_ENDPOINTS = (
     "topstories",
 )
 
-
 async def _fetch_feed_ids(client: httpx.AsyncClient, feed: str) -> List[int]:
     """Fetch story IDs from a single HN feed endpoint."""
     response = await client.get(f"{HN_BASE_URL}/{feed}.json")
     response.raise_for_status()
     data = response.json()
     return data if isinstance(data, list) else []
-
 
 async def _fetch_item(client: httpx.AsyncClient, item_id: int) -> dict | None:
     """Fetch details for one HN item by ID."""
@@ -45,13 +43,11 @@ async def _fetch_item(client: httpx.AsyncClient, item_id: int) -> dict | None:
     item = response.json()
     return item if isinstance(item, dict) else None
 
-
 def _to_iso_timestamp(unix_ts: int | None) -> str:
     """Convert Unix timestamp (seconds) to ISO-8601 UTC."""
     if not unix_ts:
         return datetime.now(timezone.utc).isoformat()
     return datetime.fromtimestamp(unix_ts, tz=timezone.utc).isoformat()
-
 
 def _parse_item(item: dict) -> NormalizedPost | None:
     """Convert a Firebase item payload to a NormalizedPost."""
@@ -81,7 +77,6 @@ def _parse_item(item: dict) -> NormalizedPost | None:
         timestamp=_to_iso_timestamp(item.get("time")),
         url=item_url,
     )
-
 
 async def fetch_hn_posts() -> List[NormalizedPost]:
     """

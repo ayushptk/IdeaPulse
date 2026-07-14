@@ -19,9 +19,7 @@ from app.schemas import ClusterResult, GeneratedIdea, LinkedInFounderIdea
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# Lazy-initialized client (avoids import-time errors if key is missing)
 _client: genai.Client | None = None
-
 
 def _get_client() -> genai.Client:
     """Get or create the Gemini client."""
@@ -29,11 +27,6 @@ def _get_client() -> genai.Client:
     if _client is None:
         _client = genai.Client(api_key=settings.GEMINI_API_KEY)
     return _client
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Prompt Engineering
-# ─────────────────────────────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = """You are a senior SaaS product strategist and market analyst.
 Your job is to analyze real user complaints and discussions to identify viable SaaS product opportunities.
@@ -57,7 +50,6 @@ OUTPUT FORMAT: Return a JSON array of objects with exactly these fields:
   "score": 7.5
 }"""
 
-
 LINKEDIN_SYSTEM_PROMPT = """You are an expert SaaS founder, YC startup advisor, and product-market fit specialist.
 
 Your task is to convert real-world problems into high-potential SaaS startup ideas.
@@ -79,17 +71,16 @@ Be sharp, practical, and founder-level thinking.
 
 Return ONLY valid JSON."""
 
-
 def _build_user_prompt(clusters: List[ClusterResult], platform: str) -> str:
     """
     Build the user prompt from clusters.
     Batches multiple clusters into a single prompt to save API calls.
     """
     sections = []
-    for i, cluster in enumerate(clusters[:8]):  # Cap at 8 clusters per call
+    for i, cluster in enumerate(clusters[:8]):  
         post_samples = "\n".join(
             f"  - \"{p.text[:300]}\" (engagement: {p.engagement})"
-            for p in cluster.posts[:5]  # Max 5 posts per cluster
+            for p in cluster.posts[:5]  
         )
         sections.append(
             f"CLUSTER {i + 1} (avg engagement: {cluster.avg_engagement:.0f}):\n"
@@ -105,7 +96,6 @@ def _build_user_prompt(clusters: List[ClusterResult], platform: str) -> str:
 
 Generate 5 unique SaaS ideas based on the problems identified above.
 Return ONLY a valid JSON array — no markdown, no explanation, just the JSON."""
-
 
 def _build_linkedin_user_prompt(clusters: List[ClusterResult]) -> str:
     """
@@ -136,11 +126,6 @@ Each idea must include exactly these fields:
 }}
 
 Return ONLY a valid JSON array with exactly 3 objects."""
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# AI Generation
-# ─────────────────────────────────────────────────────────────────────────────
 
 async def generate_ideas(
     clusters: List[ClusterResult],
@@ -178,7 +163,7 @@ async def generate_ideas(
         full_prompt = f"{SYSTEM_PROMPT}\n\n{_build_user_prompt(clusters, platform)}"
 
     try:
-        # google-genai SDK is sync — run in executor to keep async-friendly
+        
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
             None,
@@ -207,14 +192,13 @@ async def generate_ideas(
         logger.error(f"AI: Gemini API error for {platform}: {e}")
         return _generate_fallback_ideas(clusters, platform)
 
-
 def _parse_ai_response(raw_content: str) -> List[GeneratedIdea]:
     """
     Parse and validate the AI response JSON.
     Handles both array responses and object-with-array responses.
     Strips markdown code fences if Gemini wraps output in them.
     """
-    # Strip markdown code fences (```json ... ``` or ``` ... ```)
+    
     if raw_content.startswith("```"):
         lines = raw_content.splitlines()
         raw_content = "\n".join(
@@ -224,9 +208,8 @@ def _parse_ai_response(raw_content: str) -> List[GeneratedIdea]:
     try:
         parsed = json.loads(raw_content)
 
-        # Handle both {"ideas": [...]} and [...]
         if isinstance(parsed, dict):
-            # Find the first array value in the dict
+            
             for value in parsed.values():
                 if isinstance(value, list):
                     parsed = value
@@ -254,7 +237,6 @@ def _parse_ai_response(raw_content: str) -> List[GeneratedIdea]:
         logger.error(f"AI: failed to parse JSON response: {e}")
         logger.debug(f"AI: raw content: {raw_content[:500]}")
         return []
-
 
 def _generate_fallback_ideas(
     clusters: List[ClusterResult], platform: str
@@ -290,7 +272,6 @@ def _generate_fallback_ideas(
         ))
 
     return ideas
-
 
 async def extract_linkedin_founder_ideas(post_text: str) -> List[LinkedInFounderIdea]:
     """

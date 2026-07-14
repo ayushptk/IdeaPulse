@@ -16,19 +16,16 @@ from app.schemas import GeneratedIdea
 
 logger = logging.getLogger(__name__)
 
-# ── Scoring weights ──
-WEIGHT_AI_SCORE = 0.50      # AI's own viability assessment
-WEIGHT_SPECIFICITY = 0.20   # How specific/actionable the idea is
-WEIGHT_FEATURES = 0.15      # Quality of feature list
-WEIGHT_MONETIZATION = 0.15  # Clarity of monetization strategy
+WEIGHT_AI_SCORE = 0.50      
+WEIGHT_SPECIFICITY = 0.20   
+WEIGHT_FEATURES = 0.15      
+WEIGHT_MONETIZATION = 0.15  
 
-# ── Market indicators boost score ──
 MARKET_KEYWORDS = [
     "B2B", "enterprise", "SaaS", "subscription", "recurring",
     "per seat", "per user", "API", "platform", "marketplace",
     "automation", "workflow", "integration", "analytics",
 ]
-
 
 def _score_specificity(idea: GeneratedIdea) -> float:
     """
@@ -39,13 +36,11 @@ def _score_specificity(idea: GeneratedIdea) -> float:
     idea_words = len(idea.idea.split())
     users_words = len(idea.users.split())
 
-    # Ideal: 15-40 words for problem, 10-30 for idea, 5-15 for users
     problem_score = min(problem_words / 20, 1.0) * 10
     idea_score = min(idea_words / 15, 1.0) * 10
     users_score = min(users_words / 8, 1.0) * 10
 
     return (problem_score * 0.4 + idea_score * 0.3 + users_score * 0.3)
-
 
 def _score_features(idea: GeneratedIdea) -> float:
     """Score 0–10 based on feature list quality."""
@@ -53,33 +48,29 @@ def _score_features(idea: GeneratedIdea) -> float:
     if n_features == 0:
         return 0.0
 
-    # Ideal: 3-5 features, each 3-10 words
     count_score = min(n_features / 4, 1.0) * 5
     avg_length = sum(len(f.split()) for f in idea.features) / n_features
     detail_score = min(avg_length / 5, 1.0) * 5
 
     return count_score + detail_score
 
-
 def _score_monetization(idea: GeneratedIdea) -> float:
     """Score 0–10 based on monetization clarity."""
     text = idea.monetization.lower()
-    score = 2.0  # Base score for having any monetization
+    score = 2.0  
 
-    # Bonus for specificity signals
     if "$" in text or "per" in text:
-        score += 3.0  # Has pricing numbers
+        score += 3.0  
     if any(kw in text for kw in ["freemium", "free tier", "trial"]):
-        score += 1.5  # Has acquisition strategy
+        score += 1.5  
     if any(kw in text for kw in ["enterprise", "team", "seat", "user"]):
-        score += 1.5  # Scalable pricing model
+        score += 1.5  
     if any(kw in text for kw in ["monthly", "annual", "yearly"]):
-        score += 1.0  # Recurring revenue
+        score += 1.0  
     if len(text.split()) > 10:
-        score += 1.0  # Detailed explanation
+        score += 1.0  
 
     return min(score, 10.0)
-
 
 def _market_boost(idea: GeneratedIdea) -> float:
     """
@@ -89,7 +80,6 @@ def _market_boost(idea: GeneratedIdea) -> float:
     combined = f"{idea.idea} {idea.users} {idea.monetization}".lower()
     matches = sum(1 for kw in MARKET_KEYWORDS if kw.lower() in combined)
     return min(matches * 0.15, 1.0)
-
 
 def score_ideas(ideas: List[GeneratedIdea]) -> List[GeneratedIdea]:
     """
@@ -120,10 +110,8 @@ def score_ideas(ideas: List[GeneratedIdea]) -> List[GeneratedIdea]:
             + boost
         )
 
-        # Clamp to 1–10 range
         final_score = round(max(1.0, min(10.0, final_score)), 1)
 
-        # Create updated idea with recalculated score
         scored.append(GeneratedIdea(
             problem=idea.problem,
             users=idea.users,
@@ -133,12 +121,10 @@ def score_ideas(ideas: List[GeneratedIdea]) -> List[GeneratedIdea]:
             score=final_score,
         ))
 
-    # Sort by score descending
     scored.sort(key=lambda x: x.score, reverse=True)
 
     logger.info(f"Scoring: ranked {len(scored)} ideas, top score: {scored[0].score}")
     return scored
-
 
 def generate_content_hash(idea: GeneratedIdea) -> str:
     """

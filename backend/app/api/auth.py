@@ -37,13 +37,13 @@ class UpdateProfilePayload(BaseModel):
 
 @router.post("/verify")
 async def verify_auth(payload: AuthPayload, db: AsyncSession = Depends(get_db)):
-    # Check if user exists
+    
     stmt = select(User).where(User.email == payload.email)
     result = await db.execute(stmt)
     user = result.scalars().first()
 
     if not user:
-        # Create new user
+        
         user = User(
             email=payload.email,
             name=payload.name,
@@ -110,8 +110,7 @@ async def login_user(payload: LoginPayload, db: AsyncSession = Depends(get_db)):
 
 @router.patch("/update")
 async def update_profile(payload: UpdateProfilePayload, db: AsyncSession = Depends(get_db)):
-    # In a real app, you'd get the user ID from the JWT token.
-    # For now, we'll use email as the identifier if provided, or assume a test user.
+
     if not payload.email:
          raise HTTPException(status_code=400, detail="Email is required to identify user")
     
@@ -126,8 +125,6 @@ async def update_profile(payload: UpdateProfilePayload, db: AsyncSession = Depen
         user.name = payload.name
     if payload.picture:
         user.picture = payload.picture
-    # If bio is added to User model, update it here. 
-    # For now, let's just update name and picture as requested.
 
     await db.commit()
     await db.refresh(user)

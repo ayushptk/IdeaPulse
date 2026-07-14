@@ -16,11 +16,9 @@ from app.schemas import ClusterResult, NormalizedPost
 
 logger = logging.getLogger(__name__)
 
-# ── Clustering parameters ──
-MIN_POSTS_FOR_CLUSTERING = 5  # Below this, skip clustering
-MAX_CLUSTERS = 10             # Upper bound on cluster count
-MIN_CLUSTER_SIZE = 2          # Discard clusters with < this many posts
-
+MIN_POSTS_FOR_CLUSTERING = 5  
+MAX_CLUSTERS = 10             
+MIN_CLUSTER_SIZE = 2          
 
 def _determine_k(n_posts: int) -> int:
     """
@@ -29,10 +27,9 @@ def _determine_k(n_posts: int) -> int:
     """
     if n_posts < MIN_POSTS_FOR_CLUSTERING:
         return 1
-    # Roughly sqrt(n/2), capped at MAX_CLUSTERS
+    
     k = max(3, min(int(np.sqrt(n_posts / 2)), MAX_CLUSTERS))
-    return min(k, n_posts)  # Can't have more clusters than posts
-
+    return min(k, n_posts)  
 
 def cluster_posts(posts: List[NormalizedPost]) -> List[ClusterResult]:
     """
@@ -54,7 +51,6 @@ def cluster_posts(posts: List[NormalizedPost]) -> List[ClusterResult]:
     if not posts:
         return []
 
-    # Too few posts → treat all as one cluster
     if len(posts) < MIN_POSTS_FOR_CLUSTERING:
         combined_text = max((p.text for p in posts), key=len)
         avg_eng = sum(p.engagement for p in posts) / len(posts)
@@ -65,23 +61,20 @@ def cluster_posts(posts: List[NormalizedPost]) -> List[ClusterResult]:
             avg_engagement=avg_eng,
         )]
 
-    # ── Step 1: TF-IDF Vectorization ──
     texts = [p.text for p in posts]
     vectorizer = TfidfVectorizer(
         max_features=5000,
         stop_words="english",
-        ngram_range=(1, 2),     # Unigrams + bigrams for better topic capture
+        ngram_range=(1, 2),     
         min_df=1,
-        max_df=0.95,            # Ignore terms in >95% of docs (too common)
+        max_df=0.95,            
     )
     tfidf_matrix = vectorizer.fit_transform(texts)
 
-    # ── Step 2: K-Means Clustering ──
     k = _determine_k(len(posts))
     kmeans = KMeans(n_clusters=k, random_state=42, n_init=10, max_iter=300)
     labels = kmeans.fit_predict(tfidf_matrix)
 
-    # ── Step 3: Build clusters and find representatives ──
     clusters: dict[int, List[int]] = {}
     for idx, label in enumerate(labels):
         clusters.setdefault(label, []).append(idx)
@@ -89,11 +82,10 @@ def cluster_posts(posts: List[NormalizedPost]) -> List[ClusterResult]:
     results: List[ClusterResult] = []
     for cluster_id, indices in clusters.items():
         if len(indices) < MIN_CLUSTER_SIZE:
-            continue  # Discard tiny clusters
+            continue  
 
         cluster_posts_list = [posts[i] for i in indices]
 
-        # Find the post closest to cluster centroid (most representative)
         centroid = kmeans.cluster_centers_[cluster_id]
         cluster_vectors = tfidf_matrix[indices]
         distances = np.linalg.norm(cluster_vectors.toarray() - centroid, axis=1)
@@ -109,7 +101,6 @@ def cluster_posts(posts: List[NormalizedPost]) -> List[ClusterResult]:
             avg_engagement=avg_engagement,
         ))
 
-    # Sort by engagement — higher engagement clusters first
     results.sort(key=lambda c: c.avg_engagement, reverse=True)
 
     logger.info(f"Cluster: {len(posts)} posts → {len(results)} clusters (k={k})")

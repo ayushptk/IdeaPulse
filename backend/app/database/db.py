@@ -10,27 +10,23 @@ from app.config import get_settings
 
 settings = get_settings()
 
-# ── Engine — connection pool with sensible production defaults ──
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     pool_size=20,
     max_overflow=10,
-    pool_pre_ping=True,  # Verify connections before checkout
+    pool_pre_ping=True,  
 )
 
-# ── Session factory — each request gets its own isolated session ──
 async_session_factory = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
     expire_on_commit=False,
 )
 
-
 class Base(DeclarativeBase):
     """Declarative base for all ORM models."""
     pass
-
 
 async def get_db() -> AsyncSession:
     """
@@ -47,13 +43,11 @@ async def get_db() -> AsyncSession:
         finally:
             await session.close()
 
-
 async def init_db() -> None:
     """Create all tables and seed initial data on startup."""
     async with engine.begin() as conn:
-        from app.models import Idea, Platform, RawPost, user  # noqa: F401
+        from app.models import Idea, Platform, RawPost, user  
         await conn.run_sync(Base.metadata.create_all)
-
 
 async def close_db() -> None:
     """Dispose engine pool on shutdown."""

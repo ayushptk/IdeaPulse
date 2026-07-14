@@ -24,7 +24,6 @@ from app.schemas import GeneratedIdea, NormalizedPost
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-
 async def store_ideas(
     session: AsyncSession,
     ideas: List[GeneratedIdea],
@@ -42,7 +41,6 @@ async def store_ideas(
     for idea in ideas[:settings.TOP_IDEAS_COUNT]:
         content_hash = generate_content_hash(idea)
 
-        # Check for existing duplicate
         existing = await session.execute(
             select(Idea).where(Idea.content_hash == content_hash)
         )
@@ -66,7 +64,6 @@ async def store_ideas(
     await session.commit()
     logger.info(f"Store: saved {stored_count} new ideas for {platform}")
     return stored_count
-
 
 async def run_platform_pipeline(
     fetch_fn: Callable[[], Coroutine[None, None, List[NormalizedPost]]],
@@ -94,7 +91,6 @@ async def run_platform_pipeline(
     """
     logger.info(f"Pipeline [{platform}]: starting...")
 
-    # Step 1: Fetch
     try:
         posts = await fetch_fn()
         if not posts:
@@ -105,32 +101,27 @@ async def run_platform_pipeline(
         logger.error(f"Pipeline [{platform}]: fetch failed: {e}")
         return 0
 
-    # Step 2: Filter
     filtered = filter_posts(posts)
     if not filtered:
         logger.warning(f"Pipeline [{platform}]: all posts filtered out")
         return 0
     logger.info(f"Pipeline [{platform}]: {len(filtered)} posts passed filters")
 
-    # Step 3: Cluster
     clusters = cluster_posts(filtered)
     if not clusters:
         logger.warning(f"Pipeline [{platform}]: clustering produced no results")
         return 0
     logger.info(f"Pipeline [{platform}]: {len(clusters)} clusters formed")
 
-    # Step 4: Generate ideas via AI
     ideas = await generate_ideas(clusters, platform)
     if not ideas:
         logger.warning(f"Pipeline [{platform}]: AI generated no ideas")
         return 0
     logger.info(f"Pipeline [{platform}]: {len(ideas)} ideas generated")
 
-    # Step 5: Score and rank
     scored_ideas = score_ideas(ideas)
     logger.info(f"Pipeline [{platform}]: ideas scored, top={scored_ideas[0].score}")
 
-    # Step 6: Store
     stored = await store_ideas(session, scored_ideas, platform)
     logger.info(f"Pipeline [{platform}]: complete — {stored} new ideas stored")
 

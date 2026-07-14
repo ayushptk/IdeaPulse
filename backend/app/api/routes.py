@@ -33,7 +33,7 @@ settings = get_settings()
 router = APIRouter()
 
 router.include_router(auth_router)
-# ── Platform registry — maps URL slugs to pipeline functions ──
+
 PLATFORM_PIPELINES = {
     "reddit": run_reddit_pipeline,
     "producthunt": run_producthunt_pipeline,
@@ -50,16 +50,10 @@ PLATFORM_ALIASES = {
     "linked-in": "linkedin",
 }
 
-
 def _resolve_platform(platform: str) -> str:
     """Resolve platform aliases to canonical names."""
     platform = platform.lower().strip()
     return PLATFORM_ALIASES.get(platform, platform)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Health Check
-# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/health", response_model=HealthResponse, tags=["System"])
 async def health_check(db: AsyncSession = Depends(get_db)):
@@ -78,7 +72,6 @@ async def health_check(db: AsyncSession = Depends(get_db)):
         database=db_status,
     )
 
-
 @router.get(
     "/scheduler/status",
     response_model=SchedulerStatusResponse,
@@ -94,11 +87,6 @@ async def get_scheduler_status_endpoint():
     - Countdown in seconds until next run
     """
     return SchedulerStatusResponse(**get_scheduler_status())
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Ideas Endpoints
-# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get(
     "/ideas/latest",
@@ -121,7 +109,6 @@ async def get_latest_ideas(
     )
     ideas = result.scalars().all()
     return [IdeaResponse.model_validate(idea) for idea in ideas]
-
 
 @router.get(
     "/ideas/{platform}",
@@ -152,7 +139,6 @@ async def get_platform_ideas(
                    f"Supported: {', '.join(PLATFORM_PIPELINES.keys())}",
         )
 
-    # Query for platform name matching (indie pipeline stores as "indiehackers")
     platform_db_name = "indiehackers" if resolved == "indie" else resolved
 
     result = await db.execute(
@@ -163,7 +149,6 @@ async def get_platform_ideas(
     )
     ideas = result.scalars().all()
 
-    # Optional: run pipeline on-demand for empty platforms
     if refresh and not ideas:
         try:
             pipeline_fn = PLATFORM_PIPELINES[resolved]
@@ -183,7 +168,6 @@ async def get_platform_ideas(
         count=len(ideas),
         ideas=[IdeaResponse.model_validate(idea) for idea in ideas],
     )
-
 
 @router.get(
     "/ideas",
@@ -217,7 +201,6 @@ async def get_all_ideas(
 
     return all_platforms
 
-
 @router.get(
     "/ideas/hn/daily",
     response_model=PlatformIdeasResponse,
@@ -245,7 +228,6 @@ async def get_daily_hn_ideas(
     )
     ideas = result.scalars().all()
 
-    # Fallback so the endpoint always returns useful data.
     if not ideas:
         fallback_result = await db.execute(
             select(Idea)
@@ -260,8 +242,6 @@ async def get_daily_hn_ideas(
         count=len(ideas),
         ideas=[IdeaResponse.model_validate(idea) for idea in ideas],
     )
-
-
 
 @router.post(
     "/ideas/linkedin/extract",
@@ -281,11 +261,6 @@ async def extract_linkedin_ideas(payload: LinkedInExtractRequest):
             detail="Could not extract ideas from the provided LinkedIn post text.",
         )
     return ideas
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Pipeline Trigger Endpoints
-# ─────────────────────────────────────────────────────────────────────────────
 
 @router.post(
     "/pipelines/{platform}/run",
@@ -328,7 +303,6 @@ async def trigger_pipeline(
             ideas_generated=0,
             message=f"Pipeline failed: {str(e)}",
         )
-
 
 @router.post(
     "/pipelines/run-all",

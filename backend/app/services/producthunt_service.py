@@ -18,11 +18,9 @@ from app.schemas import NormalizedPost
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# Product Hunt endpoints
 PH_TOKEN_URL = "https://api.producthunt.com/v2/oauth/token"
 PH_API_URL = "https://api.producthunt.com/v2/api/graphql"
 
-# GraphQL query — latest posts with vote/comment counts
 POSTS_QUERY = """
 query($first: Int!, $order: PostsOrder!) {
   posts(first: $first, order: $order) {
@@ -47,7 +45,6 @@ query($first: Int!, $order: PostsOrder!) {
 }
 """
 
-# GraphQL query — fetch comments for a specific post (for richer pain-point data)
 COMMENTS_QUERY = """
 query($postId: ID!, $first: Int!) {
   post(id: $postId) {
@@ -65,9 +62,7 @@ query($postId: ID!, $first: Int!) {
 }
 """
 
-# In-memory token cache (per process lifetime)
 _cached_token: str | None = None
-
 
 async def _get_access_token(client: httpx.AsyncClient) -> str | None:
     """
@@ -78,7 +73,6 @@ async def _get_access_token(client: httpx.AsyncClient) -> str | None:
     if _cached_token:
         return _cached_token
 
-    # Prefer a pre-configured static token if provided
     if settings.PRODUCTHUNT_API_TOKEN:
         _cached_token = settings.PRODUCTHUNT_API_TOKEN
         return _cached_token
@@ -115,7 +109,6 @@ async def _get_access_token(client: httpx.AsyncClient) -> str | None:
         logger.error(f"Product Hunt: OAuth token request error: {e}")
         return None
 
-
 async def _graphql(
     client: httpx.AsyncClient,
     token: str,
@@ -137,7 +130,6 @@ async def _graphql(
     resp.raise_for_status()
     return resp.json()
 
-
 async def _fetch_posts(client: httpx.AsyncClient, token: str, limit: int) -> List[dict]:
     """Fetch the latest Product Hunt posts."""
     data = await _graphql(
@@ -146,7 +138,6 @@ async def _fetch_posts(client: httpx.AsyncClient, token: str, limit: int) -> Lis
     )
     edges = data.get("data", {}).get("posts", {}).get("edges", [])
     return [edge["node"] for edge in edges if edge.get("node")]
-
 
 async def _fetch_comments(client: httpx.AsyncClient, token: str, post_id: str) -> List[str]:
     """Fetch top comments for a post to enrich the pain-point text."""
@@ -164,7 +155,6 @@ async def _fetch_comments(client: httpx.AsyncClient, token: str, post_id: str) -
     except Exception as e:
         logger.debug(f"Product Hunt: failed to fetch comments for {post_id}: {e}")
         return []
-
 
 def _parse_product(product: dict, comments: List[str] | None = None) -> NormalizedPost | None:
     """Convert a Product Hunt node (+ optional comments) into a NormalizedPost."""
@@ -201,7 +191,6 @@ def _parse_product(product: dict, comments: List[str] | None = None) -> Normaliz
         url=product.get("url", ""),
     )
 
-
 async def fetch_producthunt_posts() -> List[NormalizedPost]:
     """Main entry point — collects recent Product Hunt launches with comments."""
     posts: List[NormalizedPost] = []
@@ -220,7 +209,6 @@ async def fetch_producthunt_posts() -> List[NormalizedPost]:
                 post_id = product.get("id", "")
                 comments: List[str] = []
 
-                # Only fetch comments if the post has some (saves API quota)
                 if post_id and (product.get("commentsCount") or 0) > 0:
                     comments = await _fetch_comments(client, token, post_id)
 
